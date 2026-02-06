@@ -13,7 +13,7 @@ public class Cafe {
 
     // Firebase의 "tags" 필드와 이름을 맞춥니다.
     @PropertyName("tags")
-    private List<String> tags
+    private List<String> tags;
 
     public Cafe() { } // Firebase용 필수 생성자
 
