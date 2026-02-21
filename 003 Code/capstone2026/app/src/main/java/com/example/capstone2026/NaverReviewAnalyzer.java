@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NaverReviewAnalyzer {
-    private static final String CLIENT_ID = "iwYLUmLB7f74QUqCXvt0"; // 실제 키 삭제 완료
-    private static final String CLIENT_SECRET = "c3Rz2Kzb5N";
+    private static final String CLIENT_ID = "개인키"; // 실제 키 삭제 완료
+    private static final String CLIENT_SECRET = "개인키";
 
     public interface AnalysisCallback {
         void onComplete(List<Tag> analyzedTags);
