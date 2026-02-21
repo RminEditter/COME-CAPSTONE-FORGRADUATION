@@ -60,10 +60,11 @@ public class NaverReviewAnalyzer {
             if (content.contains("카공") || content.contains("스터디") || content.contains("작업")) resultTags.add(Tag.WORK);
             if (content.contains("조용한") || content.contains("한적한")) resultTags.add(Tag.QUIET);
             if (content.contains("디저트") || content.contains("케이크") || content.contains("빵")) resultTags.add(Tag.DESSERT);
-            if (content.contains("산미") || content.contains("커피가 신")) resultTags.add(Tag.ACIDIC);
-            if (content.contains("고소한") || content.contains("너티")) resultTags.add(Tag.NUTTY);
+            if (content.contains("산미") || content.contains("신맛") || content.contains("스페셜티")) resultTags.add(Tag.ACIDIC);
+            if (content.contains("고소한") || content.contains("고소한")) resultTags.add(Tag.NUTTY);
             if (content.contains("사진") || content.contains("인스타") || content.contains("예쁜")) resultTags.add(Tag.PHOTO);
             if (content.contains("콘센트") || content.contains("충전")) resultTags.add(Tag.OUTLET);
+            if (content.contains("쉬기 좋은") || content.contains("휴식")) resultTags.add(Tag.REST);
 
         } catch (Exception e) { e.printStackTrace(); }
         return resultTags;
