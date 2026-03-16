@@ -5,13 +5,13 @@ import java.util.Map;
 
 public enum Tag {
     // Taste
-    ACIDIC, NUTTY, BITTER,
+    ACIDIC, NUTTY,
     // Mood
     QUIET, COZY, LIVELY,
     // Purpose
     WORK, DATE, REST,
     // Menu
-    DESSERT, NONCOFFEE,
+    DESSERT, NONCOFFEE, COFFEE,
     // Convenience / vibe
     OUTLET, WIFI, PHOTO;
 
@@ -20,7 +20,6 @@ public enum Tag {
     static {
         KO_LABEL.put(ACIDIC, "산미");
         KO_LABEL.put(NUTTY, "고소");
-        KO_LABEL.put(BITTER, "쌉싸름");
 
         KO_LABEL.put(QUIET, "조용함");
         KO_LABEL.put(COZY, "아늑함");
@@ -30,11 +29,11 @@ public enum Tag {
         KO_LABEL.put(DATE, "데이트");
         KO_LABEL.put(REST, "휴식");
 
+        KO_LABEL.put(COFFEE, "커피");
         KO_LABEL.put(DESSERT, "디저트");
         KO_LABEL.put(NONCOFFEE, "논커피");
 
         KO_LABEL.put(OUTLET, "콘센트");
-        KO_LABEL.put(WIFI, "와이파이");
         KO_LABEL.put(PHOTO, "사진맛집");
     }
 
