@@ -11,42 +11,43 @@ public class TagAssigner {
         String n = safeLower(name);
         String a = safeLower(address);
 
-        // ===== 1) 키워드 기반 확정 태그 =====
-        if (containsAny(n, "스터디", "공부", "study", "랩", "작업")) {
-            addIfAbsent(tags, Tag.WORK);
-            addIfAbsent(tags, Tag.QUIET);
-            addIfAbsent(tags, Tag.WIFI);
-            addIfAbsent(tags, Tag.OUTLET);
+        // ===== 1) 키워드 기반 확정 태그 (새로운 Tag Enum 매핑) =====
+        if (containsAny(n, "스터디", "공부", "study", "랩", "작업", "노트북", "콘센트")) {
+            addIfAbsent(tags, Tag.WORK_FRIENDLY); // WORK 대신
+            // QUIET, WIFI, OUTLET 등이 없으므로 의미가 가장 가까운 태그 부여
+            addIfAbsent(tags, Tag.SOLO);
         }
 
         if (containsAny(n, "디저트", "케이크", "베이커리", "빵", "크로플", "마카롱")) {
             addIfAbsent(tags, Tag.DESSERT);
-            addIfAbsent(tags, Tag.COZY);
         }
 
-        if (containsAny(n, "로스터", "로스팅", "roaster", "roasting")) {
+        if (containsAny(n, "로스터", "로스팅", "roaster", "roasting", "핸드드립")) {
+            addIfAbsent(tags, Tag.SPECIALTY_DRIP);
             addIfAbsent(tags, pickTasteTag(storeNo));
         }
 
-        if (containsAny(n, "와인", "바", "펍", "칵테일")) {
-            // 카페 데이터에 이런 게 섞일 수도 있어서 분위기쪽만 가볍게
-            addIfAbsent(tags, Tag.LIVELY);
+        if (containsAny(n, "인테리어", "이쁜", "분위기", "감성")) {
+            addIfAbsent(tags, Tag.INTERIOR_PRETTY);
+            addIfAbsent(tags, Tag.HIP);
         }
 
-        // ===== 2) 기본 태그(없으면 고정 랜덤) =====
+        // ===== 2) 기본 태그(없으면 고정 랜덤 부여) =====
+        // 맛 태그가 없으면 랜덤 부여
         if (!containsTaste(tags)) addIfAbsent(tags, pickTasteTag(storeNo));
-        if (!containsMood(tags)) addIfAbsent(tags, pickMoodTag(storeNo));
-        if (!containsPurpose(tags)) addIfAbsent(tags, pickPurposeTag(storeNo));
 
-        // ===== 3) 가끔 PHOTO 추가(고정 랜덤) =====
-        if ((Math.abs(hash(storeNo + "_p")) % 5) == 0) addIfAbsent(tags, Tag.PHOTO);
+        // 규모/성향 태그가 없으면 랜덤 부여
+        if (!containsMoodOrSize(tags)) addIfAbsent(tags, pickMoodOrSizeTag(storeNo));
+
+        // 동반자/목적 태그가 없으면 랜덤 부여
+        if (!containsCompanion(tags)) addIfAbsent(tags, pickCompanionTag(storeNo));
 
         return tags.toArray(new Tag[0]);
     }
 
     // ---------- helpers ----------
     private static void addIfAbsent(List<Tag> list, Tag t) {
-        if (!list.contains(t)) list.add(t);
+        if (t != null && !list.contains(t)) list.add(t);
     }
 
     private static boolean containsAny(String s, String... keys) {
@@ -61,36 +62,40 @@ public class TagAssigner {
     }
 
     private static boolean containsTaste(List<Tag> tags) {
-        return tags.contains(Tag.ACIDIC) || tags.contains(Tag.NUTTY) || tags.contains(Tag.BITTER);
+        return tags.contains(Tag.BEAN_ACIDIC) || tags.contains(Tag.BEAN_NUTTY);
     }
 
-    private static boolean containsMood(List<Tag> tags) {
-        return tags.contains(Tag.QUIET) || tags.contains(Tag.COZY) || tags.contains(Tag.LIVELY);
+    private static boolean containsMoodOrSize(List<Tag> tags) {
+        return tags.contains(Tag.HIP) || tags.contains(Tag.INTERIOR_PRETTY) ||
+                tags.contains(Tag.SMALL_CAFE) || tags.contains(Tag.LARGE_CAFE);
     }
 
-    private static boolean containsPurpose(List<Tag> tags) {
-        return tags.contains(Tag.WORK) || tags.contains(Tag.DATE) || tags.contains(Tag.REST);
+    private static boolean containsCompanion(List<Tag> tags) {
+        return tags.contains(Tag.SOLO) || tags.contains(Tag.COUPLE) ||
+                tags.contains(Tag.FRIEND) || tags.contains(Tag.FAMILY) || tags.contains(Tag.COLLEAGUE);
     }
 
     private static Tag pickTasteTag(String seed) {
-        int r = Math.abs(hash(seed)) % 3;
-        if (r == 0) return Tag.ACIDIC;
-        if (r == 1) return Tag.NUTTY;
-        return Tag.BITTER;
+        int r = Math.abs(hash(seed)) % 2;
+        if (r == 0) return Tag.BEAN_ACIDIC;
+        return Tag.BEAN_NUTTY;
     }
 
-    private static Tag pickMoodTag(String seed) {
-        int r = Math.abs(hash(seed + "_m")) % 3;
-        if (r == 0) return Tag.QUIET;
-        if (r == 1) return Tag.COZY;
-        return Tag.LIVELY;
+    private static Tag pickMoodOrSizeTag(String seed) {
+        int r = Math.abs(hash(seed + "_m")) % 4;
+        if (r == 0) return Tag.HIP;
+        if (r == 1) return Tag.INTERIOR_PRETTY;
+        if (r == 2) return Tag.SMALL_CAFE;
+        return Tag.LARGE_CAFE;
     }
 
-    private static Tag pickPurposeTag(String seed) {
-        int r = Math.abs(hash(seed + "_u")) % 3;
-        if (r == 0) return Tag.WORK;
-        if (r == 1) return Tag.DATE;
-        return Tag.REST;
+    private static Tag pickCompanionTag(String seed) {
+        int r = Math.abs(hash(seed + "_u")) % 5;
+        if (r == 0) return Tag.SOLO;
+        if (r == 1) return Tag.COUPLE;
+        if (r == 2) return Tag.FRIEND;
+        if (r == 3) return Tag.FAMILY;
+        return Tag.COLLEAGUE;
     }
 
     private static int hash(String s) {

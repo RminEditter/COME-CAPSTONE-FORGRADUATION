@@ -1,4 +1,5 @@
 package com.example.capstone2026;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,12 +24,24 @@ public class BadgeRuleEngine {
         deltas.add(new BadgeDelta("REGULAR", 1));  // goal=10
         if (userRatingOr0 > 0f) deltas.add(new BadgeDelta("CRITIC", 1)); // goal=10
 
-        // 태그 기반 배지
-        if (hasTag(cafe.tags, Tag.ACIDIC)) deltas.add(new BadgeDelta("ACIDIC_LOVER", 1));       // goal=5
-        if (hasTag(cafe.tags, Tag.WORK)) deltas.add(new BadgeDelta("WORK_MASTER", 1));         // goal=10
+        /* ==========================================================
+           태그 기반 배지 (새로운 Tag Enum에 맞게 수정됨)
+        ========================================================== */
+
+        // 1. 산미 마스터 (Tag.ACIDIC -> Tag.BEAN_ACIDIC)
+        if (hasTag(cafe.tags, Tag.BEAN_ACIDIC)) deltas.add(new BadgeDelta("ACIDIC_LOVER", 1));       // goal=5
+
+        // 2. 카공 마스터 (Tag.WORK -> Tag.WORK_FRIENDLY)
+        if (hasTag(cafe.tags, Tag.WORK_FRIENDLY)) deltas.add(new BadgeDelta("WORK_MASTER", 1));         // goal=10
+
+        // 3. 디저트 탐험가 (기존 유지)
         if (hasTag(cafe.tags, Tag.DESSERT)) deltas.add(new BadgeDelta("DESSERT_EXPLORER", 1)); // goal=7
-        if (hasTag(cafe.tags, Tag.PHOTO)) deltas.add(new BadgeDelta("PHOTO_HUNTER", 1));       // goal=5
-        if (hasTag(cafe.tags, Tag.QUIET)) deltas.add(new BadgeDelta("QUIET_SEEKER", 1));       // goal=7
+
+        // 4. 사진 헌터 (Tag.PHOTO -> Tag.INTERIOR_PRETTY)
+        if (hasTag(cafe.tags, Tag.INTERIOR_PRETTY)) deltas.add(new BadgeDelta("PHOTO_HUNTER", 1));       // goal=5
+
+        // 5. 힙한 감성 추구자 (기존 QUIET 대체 -> Tag.HIP)
+        if (hasTag(cafe.tags, Tag.HIP)) deltas.add(new BadgeDelta("HIP_SEEKER", 1));       // goal=7
 
         return deltas;
     }

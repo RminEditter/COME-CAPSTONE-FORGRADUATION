@@ -1,6 +1,5 @@
 package com.example.capstone2026;
 
-
 import okhttp3.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -9,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NaverReviewAnalyzer {
-    private static final String CLIENT_ID = "개인키"; // 실제 키 삭제 완료
+    private static final String CLIENT_ID = "개인키"; // 실제 키는 프로젝트 환경변수에서 관리하세요
     private static final String CLIENT_SECRET = "개인키";
 
     public interface AnalysisCallback {
@@ -19,8 +18,10 @@ public class NaverReviewAnalyzer {
     public static void analyzeCafe(String cafeName, String address, AnalysisCallback callback) {
         OkHttpClient client = new OkHttpClient();
 
-        // 검색어 조합: "어은동 델리버리 카페 후기"
-        String query = address.split(" ")[2] + " " + cafeName + " 후기";
+        // 검색어 조합: 예) "어은동 델리버리 카페 후기"
+        String[] addrParts = address.split(" ");
+        String dongName = (addrParts.length > 2) ? addrParts[2] : "";
+        String query = dongName + " " + cafeName + " 후기";
 
         Request request = new Request.Builder()
                 .url("https://openapi.naver.com/v1/search/blog.json?display=10&query=" + query)
@@ -56,15 +57,47 @@ public class NaverReviewAnalyzer {
 
             String content = allText.toString();
 
-            // 핵심 키워드 매칭 (리뷰 기반)
-            if (content.contains("카공") || content.contains("스터디") || content.contains("작업")) resultTags.add(Tag.WORK);
-            if (content.contains("조용한") || content.contains("한적한")) resultTags.add(Tag.QUIET);
-            if (content.contains("디저트") || content.contains("케이크") || content.contains("빵")) resultTags.add(Tag.DESSERT);
-            if (content.contains("산미") || content.contains("신맛") || content.contains("스페셜티")) resultTags.add(Tag.ACIDIC);
-            if (content.contains("고소한") || content.contains("고소한")) resultTags.add(Tag.NUTTY);
-            if (content.contains("사진") || content.contains("인스타") || content.contains("예쁜")) resultTags.add(Tag.PHOTO);
-            if (content.contains("콘센트") || content.contains("충전")) resultTags.add(Tag.OUTLET);
-            if (content.contains("쉬기 좋은") || content.contains("휴식")) resultTags.add(Tag.REST);
+            /* ============================================================
+               핵심 키워드 매칭 (새로운 Tag.java 시스템에 맞게 전면 수정)
+               ============================================================ */
+
+            // 1. 카공/작업 (WORK -> WORK_FRIENDLY)
+            if (content.contains("카공") || content.contains("스터디") || content.contains("작업")) {
+                resultTags.add(Tag.WORK_FRIENDLY);
+            }
+
+            // 2. 분위기/인테리어 (PHOTO -> INTERIOR_PRETTY)
+            if (content.contains("사진") || content.contains("인스타") || content.contains("예쁜") || content.contains("인테리어")) {
+                resultTags.add(Tag.INTERIOR_PRETTY);
+            }
+
+            // 3. 디저트 (유지)
+            if (content.contains("디저트") || content.contains("케이크") || content.contains("빵") || content.contains("마카롱")) {
+                resultTags.add(Tag.DESSERT);
+            }
+
+            // 4. 산미/스페셜티 (ACIDIC -> BEAN_ACIDIC, SPECIALTY_DRIP)
+            if (content.contains("산미") || content.contains("신맛")) {
+                resultTags.add(Tag.BEAN_ACIDIC);
+            }
+            if (content.contains("스페셜티") || content.contains("핸드드립") || content.contains("드립커피")) {
+                resultTags.add(Tag.SPECIALTY_DRIP);
+            }
+
+            // 5. 고소한 맛 (NUTTY -> BEAN_NUTTY)
+            if (content.contains("고소한") || content.contains("견과류") || content.contains("바디감")) {
+                resultTags.add(Tag.BEAN_NUTTY);
+            }
+
+            // 6. 힙한 감성 (REST/QUIET 대체 -> HIP)
+            if (content.contains("힙한") || content.contains("감성") || content.contains("요즘느낌")) {
+                resultTags.add(Tag.HIP);
+            }
+
+            // 7. 음료 맛집 (추가 분석)
+            if (content.contains("맛있다") || content.contains("존맛") || content.contains("최고")) {
+                resultTags.add(Tag.DRINK_TASTY);
+            }
 
         } catch (Exception e) { e.printStackTrace(); }
         return resultTags;

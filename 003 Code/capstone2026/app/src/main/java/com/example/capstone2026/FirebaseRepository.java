@@ -64,7 +64,7 @@ public class FirebaseRepository {
         }
 
         // 2. Firestore의 해당 카페 문서 업데이트
-        db.collection("cafes") // 태섭님의 컬렉션 이름 확인 (예: "cafes" 또는 "Cafe")
+        db.collection("cafes")
                 .document(cafeId)
                 .update("tags", tagStrings)
                 .addOnSuccessListener(aVoid -> {

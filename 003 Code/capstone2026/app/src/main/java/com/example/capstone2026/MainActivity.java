@@ -1,40 +1,27 @@
 package com.example.capstone2026;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-import androidx.appcompat.widget.SearchView; // SearchView 임포트 확인
-
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private FirebaseRepository repository;
+    private RecyclerView recyclerView;
     private CafeAdapter adapter;
-    private FusedLocationProviderClient fusedLocationClient;
+    private EditText etSearch;
+    private Button btnSearch, btnFilter;
 
-    // [중요] 검색을 위해 모든 카페 모델을 보관하는 전역 리스트
-    private List<Recommender.CafeModel> fullCafeModels = new ArrayList<>();
-
-    // 현재 위치 (기본값: 대전유성구청)
-    private double myLat = 36.3604;
-    private double myLon = 127.3598;
-    private String currentQuery = null; // 현재 입력된 검색어 저장용
-
+    private List<Recommender.CafeModel> allCafes = new ArrayList<>();
     private List<Tag> selectedTags = new ArrayList<>();
 
     @Override
@@ -42,189 +29,96 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. 리사이클러뷰 설정
-        RecyclerView rvCafe = findViewById(R.id.rv_cafe);
-        rvCafe.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new CafeAdapter(new ArrayList<>());
-        rvCafe.setAdapter(adapter);
+        // 1. 뷰 연결 (XML ID와 정확히 일치시킴)
+        recyclerView = findViewById(R.id.rv_cafe);
+        etSearch = findViewById(R.id.et_search);
+        btnSearch = findViewById(R.id.btn_search);
+        btnFilter = findViewById(R.id.btn_filter);
 
-        // 검색 버튼 연결
-        EditText etSearch = findViewById(R.id.et_search);
-        Button btnSearch = findViewById(R.id.btn_search);
-        // 선호태그 설정 버튼 연결
-        Button btnFilter = findViewById(R.id.btn_filter);
-        btnFilter.setOnClickListener(v -> showTagFilterDialog());
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        etSearch.addTextChangedListener(new android.text.TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // 사용자가 글자를 입력하거나 지울 때마다 호출됨
-                performSearch(s.toString());
+        // 2. 설문 데이터 받아오기
+        if (getIntent().hasExtra("selected_tags")) {
+            List<String> tagsFromSurvey = getIntent().getStringArrayListExtra("selected_tags");
+            if (tagsFromSurvey != null) {
+                for (String s : tagsFromSurvey) {
+                    try { selectedTags.add(Tag.valueOf(s)); }
+                    catch (Exception e) { Log.e("TAG", "잘못된 태그: " + s); }
+                }
             }
+        }
 
-            @Override
-            public void afterTextChanged(android.text.Editable s) {}
-        });
-
-        // 버튼을 눌렀을 때 검색 실행
+        // 3. 버튼 클릭 리스너 설정
         btnSearch.setOnClickListener(v -> {
-            String query = etSearch.getText().toString();
-            performSearch(query); // 이 함수는 이전에 제가 드린 코드에 있습니다!
+            String query = etSearch.getText().toString().trim();
+            performSearch(query);
         });
 
+        btnFilter.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SurveyActivity.class);
+            startActivity(intent);
+            finish();
+        });
 
-        // 3. 서비스 초기화
-        repository = new FirebaseRepository();
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
-        checkLocationPermission();
+        // 4. 데이터 로드
+        loadCafesFromFirestore();
     }
 
-    // 검색 실행 로직
-    private void performSearch(String query) {
-        this.currentQuery = query;
-        // 이미 로드된 데이터들(fullCafeModels)을 대상으로 추천 엔진 재가동
-        runRecommendationEngine(new ArrayList<>(fullCafeModels));
-    }
+    private void loadCafesFromFirestore() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("cafes").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                allCafes.clear();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String name = document.getString("name");
+                    String address = document.getString("address");
+                    List<String> tagStrings = (List<String>) document.get("tags");
+                    Tag[] tags = convertStringListToTags(tagStrings);
 
-    private void checkLocationPermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1000);
-        } else {
-            getMyLocationAndLoadData();
-        }
-    }
-
-    private void getMyLocationAndLoadData() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
-                if (location != null) {
-                    myLat = location.getLatitude();
-                    myLon = location.getLongitude();
+                    allCafes.add(new Recommender.CafeModel(
+                            document.getId(), name, address, tags, 0.0, 0.0
+                    ));
                 }
-                loadAndRecommend();
-            });
-        }
+                showRecommendations();
+            } else {
+                Toast.makeText(this, "데이터 로드 실패", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    private void loadAndRecommend() {
-        repository.getCafeList(new OnDataFetchedListener<List<Cafe>>() {
-            @Override
-            public void onSuccess(List<Cafe> firebaseData) {
-                fullCafeModels.clear(); // 데이터 꼬임 방지 초기화
+    private void showRecommendations() {
+        List<Recommender.Recommendation> recommendations = Recommender.recommend(allCafes, selectedTags);
+        adapter = new CafeAdapter(recommendations);
+        recyclerView.setAdapter(adapter);
+    }
 
-                for (Cafe f : firebaseData) {
-                    // 1. DB에 이미 태그가 있는 경우
-                    if (f.getTags() != null && !f.getTags().isEmpty()) {
-                        Tag[] tags = convertStringListToTags(f.getTags());
-                        addModelAndRefresh(f, tags);
-                    }
-                    // 2. 태그가 없는 경우 분석 실행
-                    else {
-                        NaverReviewAnalyzer.analyzeCafe(f.getName(), f.getAddress(), analyzedTags -> {
-                            if (analyzedTags.isEmpty()) analyzedTags.add(Tag.COZY);
-                            repository.updateCafeTags(f.getId(), analyzedTags);
+    private void performSearch(String query) {
+        if (query.isEmpty()) {
+            showRecommendations();
+            return;
+        }
 
-                            Tag[] tagArray = analyzedTags.toArray(new Tag[0]);
-                            runOnUiThread(() -> addModelAndRefresh(f, tagArray));
-                        });
-                    }
+        List<Recommender.Recommendation> filtered = new ArrayList<>();
+        // 현재 어댑터에 있는 리스트에서 검색
+        if (adapter != null && adapter.getResultList() != null) {
+            for (Recommender.Recommendation rec : adapter.getResultList()) {
+                if (rec.cafe.name.contains(query)) {
+                    filtered.add(rec);
                 }
             }
-            @Override public void onFailure(Exception e) { e.printStackTrace(); }
-        });
-    }
-
-    // 데이터를 모델로 변환하고 전역 리스트에 추가
-    private void addModelAndRefresh(Cafe f, Tag[] tags) {
-        long id = (long) f.getId().hashCode();
-        Recommender.CafeModel newModel = new Recommender.CafeModel(
-                id, f.getName(), f.getLatitude(), f.getLongitude(), tags, 3, 0f
-        );
-
-        // 중복 추가 방지 후 전역 리스트에 저장
-        boolean exists = false;
-        for(Recommender.CafeModel m : fullCafeModels) {
-            if(m.name.equals(newModel.name)) { exists = true; break; }
         }
-        if(!exists) fullCafeModels.add(newModel);
-
-        // 분석/로드 되는 즉시 엔진 실행 (검색어 반영 포함)
-        runRecommendationEngine(new ArrayList<>(fullCafeModels));
-    }
-
-    private void runRecommendationEngine(List<Recommender.CafeModel> models) {
-        Tag[] myPreferredTags = selectedTags.toArray(new Tag[0]);
-
-        if (myPreferredTags.length == 0) {
-            myPreferredTags = new Tag[]{Tag.COZY};
-        }
-
-        Recommender.UserPreference pref = new Recommender.UserPreference(myPreferredTags, 1, 5);
-
-        // [수정] 5번째 자리에 null(VisitStatsProvider용)을 넣고, 6번째에 검색어를 넣습니다.
-        List<Recommender.RecommendResult> results = Recommender.recommend(
-                pref,
-                models,
-                myLat,
-                myLon,
-                null,         // VisitStatsProvider가 없으므로 null 전달
-                currentQuery   // 검색어 자리
-        );
-
-        runOnUiThread(() -> adapter.updateList(results));
+        adapter.updateList(filtered);
     }
 
     private Tag[] convertStringListToTags(List<String> tagStrings) {
-        Tag[] tags = new Tag[tagStrings.size()];
-        for (int i = 0; i < tagStrings.size(); i++) {
-            try {
-                tags[i] = Tag.valueOf(tagStrings.get(i));
-            } catch (Exception e) {
-                tags[i] = Tag.COZY;
+        List<Tag> validTags = new ArrayList<>();
+        if (tagStrings != null) {
+            for (String s : tagStrings) {
+                try { validTags.add(Tag.valueOf(s)); }
+                catch (Exception e) { }
             }
         }
-        return tags;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1000 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            getMyLocationAndLoadData();
-        } else {
-            loadAndRecommend();
-        }
-    }
-
-    private void showTagFilterDialog() {
-        Tag[] allTags = Tag.values(); // 모든 태그 종류 가져오기
-        String[] tagNames = new String[allTags.length];
-        boolean[] checkedItems = new boolean[allTags.length];
-
-        for (int i = 0; i < allTags.length; i++) {
-            tagNames[i] = allTags[i].labelKo(); // 태그 이름을 문자열로 변환
-            if (selectedTags.contains(allTags[i])) {
-                checkedItems[i] = true; // 이미 선택된 건 체크 표시
-            }
-        }
-
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("원하는 태그를 선택하세요")
-                .setMultiChoiceItems(tagNames, checkedItems, (dialog, which, isChecked) -> {
-                    if (isChecked) {
-                        selectedTags.add(allTags[which]);
-                    } else {
-                        selectedTags.remove(allTags[which]);
-                    }
-                })
-                .setPositiveButton("적용", (dialog, which) -> {
-                    runRecommendationEngine(new ArrayList<>(fullCafeModels));
-                })
-                .setNegativeButton("취소", null)
-                .show();
+        if (validTags.isEmpty()) validTags.add(Tag.DRINK_TASTY);
+        return validTags.toArray(new Tag[0]);
     }
 }
