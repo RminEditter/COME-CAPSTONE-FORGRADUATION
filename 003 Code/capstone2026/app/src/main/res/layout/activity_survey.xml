@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ivory_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="☕ 나의 카페 취향 찾기"
+            android:textColor="@color/brown_dark"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1. 선호하는 원두 맛은?"
+            android:textColor="@color/text_dark"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+        <RadioGroup
+            android:id="@+id/radioGroupBean"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+            <RadioButton android:id="@+id/radioBeanNutty" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="고소한 맛" android:layout_weight="1"/>
+            <RadioButton android:id="@+id/radioBeanAcidic" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="산미 있는 맛" android:layout_weight="1"/>
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2. 선호하는 카페 규모는?"
+            android:textColor="@color/text_dark"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+        <RadioGroup
+            android:id="@+id/radioGroupScale"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+            <RadioButton android:id="@+id/radioScaleSmall" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="아담한 소형" android:layout_weight="1"/>
+            <RadioButton android:id="@+id/radioScaleLarge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="넓은 대형" android:layout_weight="1"/>
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3. 어떤 목적/분위기를 원하시나요?"
+            android:textColor="@color/text_dark"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+        <RadioGroup
+            android:id="@+id/radioGroupMood"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="20dp">
+            <RadioButton android:id="@+id/radioMoodWork" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="노트북 하기 좋은 카공"/>
+            <RadioButton android:id="@+id/radioMoodInterior" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="인테리어가 예쁜 곳"/>
+            <RadioButton android:id="@+id/radioMoodHip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="힙한 감성"/>
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="4. 디저트는 필수인가요?"
+            android:textColor="@color/text_dark"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+        <RadioGroup
+            android:id="@+id/radioGroupDessert"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="32dp">
+            <RadioButton android:id="@+id/radioDessertYes" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="디저트 필수!" android:layout_weight="1"/>
+            <RadioButton android:id="@+id/radioDessertNo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="음료만 마셔요" android:layout_weight="1"/>
+        </RadioGroup>
+
+        <Button
+            android:id="@+id/btnSurveySubmit"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:background="@drawable/rounded_brown_button"
+            app:backgroundTint="@null"
+            android:text="결과 보기"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+    </LinearLayout>
+</ScrollView>

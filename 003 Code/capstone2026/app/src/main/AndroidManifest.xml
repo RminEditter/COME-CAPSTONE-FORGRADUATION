@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <queries>
+        <package android:name="com.nhn.android.nmap" />
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -18,17 +21,27 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Capstone2026"
         tools:targetApi="31">
-        <activity android:name=".SurveyActivity"
-            android:exported="true" />
+
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".LoginActivity" android:exported="false" />
+        <activity android:name=".SignupActivity" android:exported="false" />
+        <activity android:name=".FirstProfileActivity" android:exported="false" />
+        <activity android:name=".SurveyActivity" android:exported="false" />
+        <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".ProfileActivity" android:exported="false" />
+        <activity android:name=".RecommendCafeActivity" android:exported="false" />
+
+        <activity android:name=".SurveyActivity01" android:exported="false" />
+        <activity android:name=".MainActivity01" android:exported="false" />
+
     </application>
 
 </manifest>

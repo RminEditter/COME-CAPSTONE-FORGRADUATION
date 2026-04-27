@@ -1,40 +1,191 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="10dp">
+    android:background="@color/ivory_bg">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="10dp">
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/txtHomeTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="안녕하세요, CafeFit 입니다"
+            android:textColor="@color/brown_dark"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtHomeSub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="당신의 취향에 맞는 카페를 추천해드릴게요."
+            android:textColor="@color/text_dark"
+            android:textSize="15sp" />
 
         <EditText
-            android:id="@+id/et_search"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="카페 이름을 입력하세요" />
+            android:id="@+id/editSearch"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/bg_search_box"
+            android:hint="카페 이름 또는 분위기를 검색해보세요"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="@color/text_dark"
+            android:textColorHint="@color/text_dark"
+            android:inputType="text" />
 
-        <Button
-            android:id="@+id/btn_filter"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="필터"
-            android:layout_marginEnd="5dp"/>
+            android:layout_marginTop="28dp"
+            android:text="취향에 맞는 추천 1순위"
+            android:textColor="@color/brown_dark"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btn_search"
+        <LinearLayout
+            android:id="@+id/cardRecommend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_home_card"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <TextView
+                android:id="@+id/txtRecommendCafeName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="오늘의 추천 카페"
+                android:textColor="@color/brown_dark"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtRecommendCafeDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="설문 결과를 바탕으로 가장 잘 맞는 카페를 추천해드려요."
+                android:textColor="@color/text_dark"
+                android:textSize="14sp" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnRecommendCafe"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/rounded_brown_button"
+                android:text="추천 카페 보기"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="검색" />
+            android:layout_marginTop="26dp"
+            android:text="최근 본 카페"
+            android:textColor="@color/brown_dark"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_home_card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/txtRecentCafe"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="최근 본 카페가 아직 없습니다."
+                android:textColor="@color/text_dark"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:text="별점 높은 카페"
+            android:textColor="@color/brown_dark"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_home_card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/txtTopCafe1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1. 브런치 감성 카페  ★4.8"
+                android:textColor="@color/text_dark"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/txtTopCafe2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="2. 조용한 로스터리 카페  ★4.7"
+                android:textColor="@color/text_dark"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/txtTopCafe3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="3. 디저트가 유명한 카페  ★4.6"
+                android:textColor="@color/text_dark"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnSurveyStart"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="28dp"
+            android:background="@drawable/rounded_beige_button"
+            android:text="취향 설문 다시 하기"
+            android:textAllCaps="false"
+            android:textColor="@color/brown_dark"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnProfile"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/rounded_beige_button"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:text="프로필 편집"
+            android:textAllCaps="false"
+            android:textColor="@color/brown_dark"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
     </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_cafe"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-</LinearLayout>
+</ScrollView>

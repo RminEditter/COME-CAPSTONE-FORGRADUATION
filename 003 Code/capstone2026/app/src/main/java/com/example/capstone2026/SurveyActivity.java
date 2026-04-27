@@ -1,77 +1,79 @@
 package com.example.capstone2026;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class SurveyActivity extends AppCompatActivity {
 
-    RadioGroup rgBean, rgStyle, rgSize, rgCompanion;
-    Switch switchDessert, switchSpecialty;
-    Button btnSubmit;
+    private RadioGroup radioGroupBean, radioGroupScale, radioGroupMood, radioGroupDessert;
+    private RadioButton radioBeanNutty, radioScaleSmall, radioMoodWork, radioMoodInterior, radioMoodHip, radioDessertYes;
+    private Button btnSurveySubmit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.survey_activity);
+        setContentView(R.layout.activity_survey);
 
-        // 뷰 초기화
-        rgBean = findViewById(R.id.rgBean);
-        rgStyle = findViewById(R.id.rgStyle);
-        rgSize = findViewById(R.id.rgSize);
-        rgCompanion = findViewById(R.id.rgCompanion);
-        switchDessert = findViewById(R.id.switchDessert);
-        switchSpecialty = findViewById(R.id.switchSpecialty);
-        btnSubmit = findViewById(R.id.btnSubmit);
+        // 1. 뷰 연결
+        radioGroupBean = findViewById(R.id.radioGroupBean);
+        radioGroupScale = findViewById(R.id.radioGroupScale);
+        radioGroupMood = findViewById(R.id.radioGroupMood);
+        radioGroupDessert = findViewById(R.id.radioGroupDessert);
 
-        btnSubmit.setOnClickListener(v -> submitSurvey());
-    }
+        radioBeanNutty = findViewById(R.id.radioBeanNutty);
+        radioScaleSmall = findViewById(R.id.radioScaleSmall);
+        radioMoodWork = findViewById(R.id.radioMoodWork);
+        radioMoodInterior = findViewById(R.id.radioMoodInterior);
+        radioMoodHip = findViewById(R.id.radioMoodHip);
+        radioDessertYes = findViewById(R.id.radioDessertYes);
 
-    private void submitSurvey() {
-        String bean = getSelectedText(rgBean);
-        String style = getSelectedText(rgStyle);
-        String size = getSelectedText(rgSize);
-        String companion = getSelectedText(rgCompanion);
+        btnSurveySubmit = findViewById(R.id.btnSurveySubmit);
 
-        // 모든 항목 선택 여부 검사
-        if (bean.isEmpty() || style.isEmpty() || size.isEmpty() || companion.isEmpty()) {
-            Toast.makeText(this, "모든 항목을 선택해 주세요!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // 2. 제출 버튼 이벤트
+        btnSurveySubmit.setOnClickListener(v -> {
+            // 모든 문항을 선택했는지 체크
+            if (radioGroupBean.getCheckedRadioButtonId() == -1 ||
+                    radioGroupScale.getCheckedRadioButtonId() == -1 ||
+                    radioGroupMood.getCheckedRadioButtonId() == -1 ||
+                    radioGroupDessert.getCheckedRadioButtonId() == -1) {
+                Toast.makeText(this, "모든 항목을 선택해주세요.", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-        boolean dessert = switchDessert.isChecked();
-        boolean specialty = switchSpecialty.isChecked();
+            // 3. 선택한 라디오 버튼에 따라 Tag 매핑
+            String beanTag = radioBeanNutty.isChecked() ? "BEAN_NUTTY" : "BEAN_ACIDIC";
+            String scaleTag = radioScaleSmall.isChecked() ? "SMALL_CAFE" : "LARGE_CAFE";
 
-        // 컨버터를 통해 태그 변환
-        List<Tag> userTags = SurveyTagConverter.convertSurveyToTags(
-                bean, style, dessert, specialty, size, companion
-        );
+            String moodTag = "";
+            if (radioMoodWork.isChecked()) moodTag = "WORK_FRIENDLY";
+            else if (radioMoodInterior.isChecked()) moodTag = "INTERIOR_PRETTY";
+            else if (radioMoodHip.isChecked()) moodTag = "HIP";
 
-        // 결과 전달
-        Intent intent = new Intent(this, MainActivity.class);
-        ArrayList<String> tagStrings = new ArrayList<>();
-        for (Tag t : userTags) {
-            tagStrings.add(t.name());
-        }
-        intent.putStringArrayListExtra("selected_tags", tagStrings);
+            String dessertTag = radioDessertYes.isChecked() ? "DESSERT" : ""; // 음료만 마시면 디저트 태그 없음
 
-        startActivity(intent);
-        finish();
-    }
+            // 4. 저장하기
+            SharedPreferences prefs = getSharedPreferences("CafeFitSurvey", MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString("bean_tag", beanTag);
+            editor.putString("scale_tag", scaleTag);
+            editor.putString("mood_tag", moodTag);
+            editor.putString("dessert_tag", dessertTag);
+            editor.apply();
 
-    private String getSelectedText(RadioGroup group) {
-        int id = group.getCheckedRadioButtonId();
-        if (id == -1) return "";
-        RadioButton rb = findViewById(id);
-        return rb.getText().toString();
+            Toast.makeText(this, "취향 분석 완료!", Toast.LENGTH_SHORT).show();
+
+            // 5. 메인 화면으로 이동
+            Intent intent = new Intent(SurveyActivity.this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+            finish();
+        });
     }
 }
