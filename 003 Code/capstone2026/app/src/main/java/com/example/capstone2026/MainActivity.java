@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         setupClickListeners();
     }
-
+    //테스트
     @Override
     protected void onResume() {
         super.onResume();
