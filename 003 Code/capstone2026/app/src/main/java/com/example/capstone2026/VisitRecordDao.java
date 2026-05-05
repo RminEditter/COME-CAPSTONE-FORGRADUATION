@@ -8,7 +8,8 @@ import java.util.List;
 
 @Dao
 public interface VisitRecordDao {
-
+    @androidx.room.Delete
+    void delete(VisitRecord record);
     @Insert
     void insert(VisitRecord record);
 

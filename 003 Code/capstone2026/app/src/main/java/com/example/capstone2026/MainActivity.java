@@ -31,6 +31,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Button btnVisitHistory = findViewById(R.id.btnVisitHistory);
+
+        btnVisitHistory.setOnClickListener(v -> {
+            Intent intent = new Intent(this, VisitHistoryActivity.class);
+            startActivity(intent);
+        });
+
         // 파이어베이스 초기화
         db = FirebaseFirestore.getInstance();
 

@@ -42,7 +42,7 @@
 
         <activity android:name=".SurveyActivity01" android:exported="false" />
         <activity android:name=".MainActivity01" android:exported="false" />
-
+        <activity android:name=".VisitHistoryActivity" android:exported="false" />
     </application>
 
 </manifest>
