@@ -65,6 +65,22 @@ public class VisitHistoryAdapter extends RecyclerView.Adapter<VisitHistoryAdapte
 
             return true;
         });
+
+        holder.itemView.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(
+                    v.getContext(),
+                    VisitRecordActivity.class
+            );
+
+            intent.putExtra("mode", "edit");
+            intent.putExtra("id", record.getId());
+            intent.putExtra("cafeName", record.getCafeName());
+            intent.putExtra("rating", record.getRating());
+            intent.putExtra("memo", record.getMemo());
+            intent.putExtra("visitedAt", record.getVisitedAt());
+
+            v.getContext().startActivity(intent);
+        });
     }
 
     @Override

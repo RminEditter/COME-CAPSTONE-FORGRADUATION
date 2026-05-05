@@ -18,4 +18,11 @@ public interface VisitRecordDao {
 
     @Query("SELECT * FROM visit_records WHERE cafeName = :cafeName ORDER BY visitedAt DESC")
     List<VisitRecord> getRecordsByCafe(String cafeName);
+
+    @Query("SELECT cafeName, AVG(rating) AS avgRating, COUNT(*) AS visitCount " +
+            "FROM visit_records GROUP BY cafeName")
+    List<CafeRatingStats> getCafeRatingStats();
+
+    @androidx.room.Update
+    void update(VisitRecord record);
 }

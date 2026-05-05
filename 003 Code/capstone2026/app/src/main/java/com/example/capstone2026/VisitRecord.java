@@ -45,4 +45,20 @@ public class VisitRecord {
     public long getVisitedAt() {
         return visitedAt;
     }
+
+    public void setCafeName(String cafeName) {
+        this.cafeName = cafeName;
+    }
+
+    public void setRating(float rating) {
+        this.rating = rating;
+    }
+
+    public void setMemo(String memo) {
+        this.memo = memo;
+    }
+
+    public void setVisitedAt(long visitedAt) {
+        this.visitedAt = visitedAt;
+    }
 }

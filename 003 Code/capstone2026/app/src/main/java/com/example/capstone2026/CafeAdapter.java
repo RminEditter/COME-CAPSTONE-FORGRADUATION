@@ -1,4 +1,5 @@
 package com.example.capstone2026;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,11 +9,16 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
 
     private List<Recommender.Recommendation> resultList;
+
+    // 카페별 평균 별점/방문 횟수 저장용
+    private Map<String, CafeRatingStats> ratingStatsMap = new HashMap<>();
 
     public CafeAdapter(List<Recommender.Recommendation> resultList) {
         this.resultList = resultList;
@@ -23,22 +29,42 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
+    public void setRatingStatsMap(Map<String, CafeRatingStats> ratingStatsMap) {
+        this.ratingStatsMap = ratingStatsMap;
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public CafeAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_cafe, parent, false);
         return new ViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull CafeAdapter.ViewHolder holder, int position) {
         Recommender.Recommendation result = resultList.get(position);
 
         holder.tvName.setText(result.cafe.name);
         holder.tvReason.setText(result.reason);
         holder.tvMatch.setText("추천 점수: " + result.score + "점");
         holder.tvDistance.setText("약 500m");
+
+        // 카페별 내 평균 별점 표시
+        CafeRatingStats stats = ratingStatsMap.get(result.cafe.name);
+
+        if (stats != null) {
+            holder.tvMyRating.setText(
+                    "⭐ 내 평균 별점: "
+                            + String.format("%.1f", stats.avgRating)
+                            + " / 방문 "
+                            + stats.visitCount
+                            + "회"
+            );
+        } else {
+            holder.tvMyRating.setText("⭐ 내 방문 기록 없음");
+        }
 
         // 카페 카드 클릭 → 방문 기록/별점 화면
         holder.itemView.setOnClickListener(v -> {
@@ -92,16 +118,17 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvReason, tvDistance, tvMatch;
+        TextView tvName, tvReason, tvDistance, tvMatch, tvMyRating;
         Button btnMap;
 
-        public ViewHolder(View v) {
+        public ViewHolder(@NonNull View v) {
             super(v);
 
             tvName = v.findViewById(R.id.tv_name);
             tvReason = v.findViewById(R.id.tv_reason);
             tvDistance = v.findViewById(R.id.tv_distance);
             tvMatch = v.findViewById(R.id.tv_match);
+            tvMyRating = v.findViewById(R.id.tv_my_rating);
             btnMap = v.findViewById(R.id.btnMap);
         }
     }

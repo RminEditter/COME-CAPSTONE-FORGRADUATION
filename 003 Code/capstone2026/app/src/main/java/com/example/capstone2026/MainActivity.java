@@ -131,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
 
                         // 3. 알고리즘 실행 (결과 리스트 받기)
                         List<Recommender.Recommendation> results = Recommender.recommend(cafeModels, selectedTags);
+                        RecommendCafeActivity.recommendationList = results;
 
                         // 4. 결과가 있고, 취향이 1개라도 일치(score > 0)하는 카페가 있다면 1등 표시
                         if (!results.isEmpty() && results.get(0).score > 0) {
