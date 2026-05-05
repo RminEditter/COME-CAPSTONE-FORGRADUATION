@@ -38,6 +38,7 @@
         <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".ProfileActivity" android:exported="false" />
         <activity android:name=".RecommendCafeActivity" android:exported="false" />
+        <activity android:name=".VisitRecordActivity" android:exported="false" />
 
         <activity android:name=".SurveyActivity01" android:exported="false" />
         <activity android:name=".MainActivity01" android:exported="false" />
