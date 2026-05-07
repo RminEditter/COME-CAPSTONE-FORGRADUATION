@@ -18,41 +18,174 @@
             android:textStyle="bold"
             android:layout_marginBottom="24dp"/>
 
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1. 선호하는 원두 맛" android:textStyle="bold" />
-        <RadioGroup android:id="@+id/rgBean" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
-            <RadioButton android:id="@+id/rbNutty" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="고소" android:layout_marginEnd="10dp"/>
-            <RadioButton android:id="@+id/rbAcidic" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="산미" android:layout_marginEnd="10dp"/>
-            <RadioButton android:id="@+id/rbBoth" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="둘다" />
+        <!-- 1. 원두 취향 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1. 선호하는 원두 맛"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgBean"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rbNutty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="고소"
+                android:layout_marginEnd="10dp"/>
+
+            <RadioButton
+                android:id="@+id/rbAcidic"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="산미"
+                android:layout_marginEnd="10dp"/>
+
+            <RadioButton
+                android:id="@+id/rbBoth"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="둘다" />
         </RadioGroup>
 
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2. 선호하는 카페 스타일" android:textStyle="bold" />
-        <RadioGroup android:id="@+id/rgStyle" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="16dp">
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="인테리어가 이쁨" />
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="음료가 맛있음" />
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="힙함" />
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="카공" />
+        <!-- 2. 카페 스타일 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2. 선호하는 카페 스타일"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rbInterior"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="인테리어가 이쁨" />
+
+            <RadioButton
+                android:id="@+id/rbDrink"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="음료가 맛있음" />
+
+            <RadioButton
+                android:id="@+id/rbHip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="힙함" />
+
+            <RadioButton
+                android:id="@+id/rbWork"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="카공" />
         </RadioGroup>
 
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3. 카페 규모" android:textStyle="bold" />
-        <RadioGroup android:id="@+id/rgSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="소형" android:layout_marginEnd="20dp"/>
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="대형" />
+        <!-- 3. 카페 규모 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3. 카페 규모"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgSize"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rbSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="소형"
+                android:layout_marginEnd="20dp"/>
+
+            <RadioButton
+                android:id="@+id/rbLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="대형" />
         </RadioGroup>
 
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="4. 주로 누구와 방문하시나요?" android:textStyle="bold" />
-        <RadioGroup android:id="@+id/rgCompanion" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="혼자" />
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="커플" />
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="친구" />
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="가족" />
-            <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="직장동료" />
+        <!-- 4. 동행 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="4. 주로 누구와 방문하시나요?"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgCompanion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rbSolo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="혼자" />
+
+            <RadioButton
+                android:id="@+id/rbCouple"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="커플" />
+
+            <RadioButton
+                android:id="@+id/rbFriend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="친구" />
+
+            <RadioButton
+                android:id="@+id/rbFamily"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="가족" />
+
+            <RadioButton
+                android:id="@+id/rbColleague"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="직장동료" />
         </RadioGroup>
 
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDDDDD"
+            android:layout_marginBottom="16dp"/>
 
-        <Switch android:id="@+id/switchDessert" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="디저트가 꼭 있어야 하나요?" android:layout_marginBottom="8dp"/>
-        <Switch android:id="@+id/switchSpecialty" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="스페셜티/핸드드립을 선호하시나요?" android:layout_marginBottom="24dp"/>
+        <!-- 추가 옵션 -->
+        <Switch
+            android:id="@+id/switchDessert"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="디저트가 꼭 있어야 하나요?"
+            android:layout_marginBottom="8dp"/>
 
+        <Switch
+            android:id="@+id/switchSpecialty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="스페셜티/핸드드립을 선호하시나요?"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- 제출 버튼 -->
         <Button
             android:id="@+id/btnSubmit"
             android:layout_width="match_parent"
@@ -63,4 +196,5 @@
             android:textColor="#FFFFFF"/>
 
     </LinearLayout>
+
 </ScrollView>

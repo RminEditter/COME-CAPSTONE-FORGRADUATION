@@ -3,6 +3,7 @@ plugins {
     id("com.google.gms.google-services")
     }
 
+
 android {
     namespace = "com.example.capstone2026"
     compileSdk = 35
@@ -47,4 +48,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("org.json:json:20210307")
+    implementation("androidx.room:room-runtime:2.6.1")
+    annotationProcessor("androidx.room:room-compiler:2.6.1")
 }

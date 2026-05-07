@@ -8,6 +8,13 @@
     android:padding="20dp">
 
     <TextView
+        android:id="@+id/tv_my_rating"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="내 평점 없음"
+        android:textSize="14sp" />
+
+    <TextView
         android:id="@+id/tv_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -46,5 +53,11 @@
         android:lineSpacingExtra="8dp"
         android:textColor="@color/text_dark"
         android:textSize="15sp" />
+
+    <Button
+        android:id="@+id/btnMap"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="지도" />
 
 </LinearLayout>
