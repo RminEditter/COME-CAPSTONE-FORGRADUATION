@@ -60,4 +60,5 @@
         android:layout_height="wrap_content"
         android:text="지도" />
 
+
 </LinearLayout>
