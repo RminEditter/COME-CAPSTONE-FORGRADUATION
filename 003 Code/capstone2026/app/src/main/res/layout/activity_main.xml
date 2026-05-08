@@ -192,6 +192,7 @@
             android:layout_height="52dp"
             android:layout_marginTop="14dp"
             android:background="@drawable/rounded_brown_button"
+            android:backgroundTint="#7A4E2D"
             android:text="방문 기록 보기"
             android:textColor="@android:color/white"
             android:textSize="15sp"
