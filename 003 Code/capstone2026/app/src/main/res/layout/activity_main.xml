@@ -197,6 +197,7 @@
             android:textSize="15sp"
             android:textStyle="bold"
             android:textAllCaps="false" />
+        <include layout="@layout/bottom_nav_bar" />
 
     </LinearLayout>
 

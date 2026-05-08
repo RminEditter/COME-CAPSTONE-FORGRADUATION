@@ -23,6 +23,7 @@ public class RecommendCafeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recommend_cafe);
+        BottomNavHelper.setup(this);
 
         recyclerView = findViewById(R.id.recyclerViewCafes);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));

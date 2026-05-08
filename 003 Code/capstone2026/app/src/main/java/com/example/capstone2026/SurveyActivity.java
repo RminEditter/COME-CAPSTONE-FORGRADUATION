@@ -20,6 +20,7 @@ public class SurveyActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.survey_activity);
+        BottomNavHelper.setup(this);
 
         rgBean = findViewById(R.id.rgBean);
         rgStyle = findViewById(R.id.rgStyle);

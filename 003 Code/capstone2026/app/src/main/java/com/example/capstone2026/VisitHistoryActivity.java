@@ -16,6 +16,7 @@ public class VisitHistoryActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_visit_history);
+        BottomNavHelper.setup(this);
 
         rvVisitHistory = findViewById(R.id.rvVisitHistory);
         rvVisitHistory.setLayoutManager(new LinearLayoutManager(this));

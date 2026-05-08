@@ -21,6 +21,7 @@ public class ProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
+        BottomNavHelper.setup(this);
 
         editProfileNickname = findViewById(R.id.editProfileNickname);
         spinnerProfileGender = findViewById(R.id.spinnerProfileGender);
