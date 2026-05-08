@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -30,20 +31,32 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        BottomNavHelper.setup(this);
 
-        Button btnVisitHistory = findViewById(R.id.btnVisitHistory);
-
-        btnVisitHistory.setOnClickListener(v -> {
-            Intent intent = new Intent(this, VisitHistoryActivity.class);
-            startActivity(intent);
-        });
-
-        // 파이어베이스 초기화
+        // 1. 파이어베이스부터 초기화
         db = FirebaseFirestore.getInstance();
 
+        // 2. 뷰 초기화 (initViews 내부에 findViewById들이 있을 거예요)
         initViews();
-        setupClickListeners();
+
+        try {
+            Button btnVisitHistory = findViewById(R.id.btnVisitHistory);
+            if (btnVisitHistory != null) {
+                btnVisitHistory.setOnClickListener(v -> {
+                    Intent intent = new Intent(this, VisitHistoryActivity.class);
+                    startActivity(intent);
+                });
+            }
+
+            BottomNavHelper.setup(this);
+            setupClickListeners();
+        } catch (Exception e) {
+            android.util.Log.e("CafeFit", "뷰 설정 중 에러 발생: " + e.getMessage());
+        }
+
+        // 태그 업데이트 코드 건들지마시길.
+        //android.util.Log.e("CafeFit", "함수 호출 직전!");
+        //Toast.makeText(this, "함수 실행 시도!", Toast.LENGTH_SHORT).show();
+        //updateAllCafeTags();
     }
     //테스트
     @Override
@@ -196,6 +209,31 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(MainActivity.this, "검색어를 입력해주세요!", Toast.LENGTH_SHORT).show();
                 return false;
+            }
+        });
+    }
+    private void updateAllCafeTags() {
+        db.collection("cafes").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                List<QueryDocumentSnapshot> docs = new ArrayList<>();
+                for (QueryDocumentSnapshot d : task.getResult()) docs.add(d);
+
+                // 한꺼번에 보내지 않고 0.5초 간격으로 하나씩 실행
+                for (int i = 0; i < docs.size(); i++) {
+                    final int index = i;
+                    new android.os.Handler().postDelayed(() -> {
+                        QueryDocumentSnapshot document = docs.get(index);
+                        String name = document.getString("name");
+                        String addr = document.getString("address");
+
+                        NaverReviewAnalyzer.analyzeCafe(name, addr, tags -> {
+                            List<String> tagStrings = new ArrayList<>();
+                            for (Tag t : tags) tagStrings.add(t.name());
+                            db.collection("cafes").document(document.getId()).update("tags", tagStrings);
+                            android.util.Log.e("CafeFit", "성공: " + name);
+                        });
+                    }, i * 500); // 0.5초(500ms)씩 간격을 늘려가며 예약 실행
+                }
             }
         });
     }

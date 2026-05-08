@@ -42,27 +42,38 @@ public class Recommender {
         List<Recommendation> results = new ArrayList<>();
 
         for (CafeModel cafe : allCafes) {
-            int score = 0;
+            int finalScore = 0;
             List<Tag> matched = new ArrayList<>();
 
-            // 태그 매칭 점수 계산
+            // 1. 태그 매칭 점수 계산
             for (Tag ut : userTags) {
                 for (Tag ct : cafe.tags) {
                     if (ut == ct) {
-                        score++;
                         matched.add(ct);
                     }
                 }
             }
 
-            // 추천 사유 생성 (ReasonGenerator 활용)
-            // 임시로 거리 500m, 가격대 2(보통)로 설정
+            // 2. [수정] 점수 계산 로직 튜닝 (100점 만점 기준)
+            if (!userTags.isEmpty()) {
+                // (일치 개수 / 내 선택 개수) 비율로 100점 환산
+                double ratio = (double) matched.size() / userTags.size();
+                finalScore = (int) (ratio * 100);
+
+                // 보너스: 하나라도 맞으면 최소 20점은 보장 (너무 낮으면 기분 안 좋으니까요!)
+                if (matched.size() > 0 && finalScore < 20) {
+                    finalScore = 20;
+                }
+            }
+
+            // 3. 추천 사유 생성
             String reason = ReasonGenerator.buildReason(matched.toArray(new Tag[0]), 500.0, 2);
 
-            results.add(new Recommendation(cafe, score, reason));
+            // 정수화된 finalScore를 넣어줍니다.
+            results.add(new Recommendation(cafe, finalScore, reason));
         }
 
-        // 점수 높은 순으로 정렬
+        // 4. 점수 높은 순으로 정렬
         Collections.sort(results, (a, b) -> b.score - a.score);
 
         return results;
