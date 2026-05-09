@@ -102,6 +102,7 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         TextView tvMatch;
         TextView tvMyRating;
         TextView tvVisitRecord;
+        TextView tvTags;
 
         public ViewHolder(@NonNull View v) {
             super(v);
@@ -112,6 +113,7 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
             tvMatch = v.findViewById(R.id.tv_match);
             tvMyRating = v.findViewById(R.id.tv_my_rating);
             tvVisitRecord = v.findViewById(R.id.tv_visit_record);
+            tvTags = v.findViewById(R.id.tv_tags);
         }
     }
 }
