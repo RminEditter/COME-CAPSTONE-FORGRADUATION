@@ -203,8 +203,8 @@
             android:layout_height="60dp"
             android:text="내 맞춤 카페 찾기"
             android:textSize="18sp"
-            android:backgroundTint="#FF6200EE"
-            android:textColor="#FFFFFF"/>
+            android:backgroundTint="#4A2C1A"
+            android:textColor="#DDDDDD"/>
 
     </LinearLayout>
 
