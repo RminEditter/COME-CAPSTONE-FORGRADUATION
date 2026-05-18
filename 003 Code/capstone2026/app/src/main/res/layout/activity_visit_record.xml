@@ -11,6 +11,17 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnBack"
+            android:layout_width="72dp"
+            android:layout_height="42dp"
+            android:background="@drawable/bg_back_button"
+            android:text="←"
+            android:textColor="#4A2C1A"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textAllCaps="false" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
