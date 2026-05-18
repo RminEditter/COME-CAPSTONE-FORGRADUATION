@@ -20,6 +20,11 @@ public class SignupActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signup);
 
+        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
         editSignupId = findViewById(R.id.editSignupId);
         editSignupPassword = findViewById(R.id.editSignupPassword);
         editSignupPasswordCheck = findViewById(R.id.editSignupPasswordCheck);

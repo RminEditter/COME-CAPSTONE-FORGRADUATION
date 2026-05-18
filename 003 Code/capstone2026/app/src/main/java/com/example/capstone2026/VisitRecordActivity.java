@@ -27,6 +27,11 @@ public class VisitRecordActivity extends AppCompatActivity {
         setContentView(R.layout.activity_visit_record);
         BottomNavHelper.setup(this);
 
+        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
         tvCafeName = findViewById(R.id.tvCafeName);
         ratingBar = findViewById(R.id.ratingBar);
         etMemo = findViewById(R.id.etMemo);

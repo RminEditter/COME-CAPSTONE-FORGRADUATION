@@ -18,6 +18,11 @@ public class VisitHistoryActivity extends AppCompatActivity {
         setContentView(R.layout.activity_visit_history);
         BottomNavHelper.setup(this);
 
+        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
         rvVisitHistory = findViewById(R.id.rvVisitHistory);
         rvVisitHistory.setLayoutManager(new LinearLayoutManager(this));
 

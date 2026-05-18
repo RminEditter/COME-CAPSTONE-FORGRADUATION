@@ -25,6 +25,11 @@ public class RecommendCafeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_recommend_cafe);
         BottomNavHelper.setup(this);
 
+        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
         recyclerView = findViewById(R.id.recyclerViewCafes);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 

@@ -22,6 +22,11 @@ public class SurveyActivity extends AppCompatActivity {
         setContentView(R.layout.survey_activity);
         BottomNavHelper.setup(this);
 
+        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
         rgBean = findViewById(R.id.rgBean);
         rgStyle = findViewById(R.id.rgStyle);
         rgSize = findViewById(R.id.rgSize);

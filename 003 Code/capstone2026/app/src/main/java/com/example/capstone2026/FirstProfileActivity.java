@@ -37,6 +37,11 @@ public class FirstProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_first_profile);
 
+        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
         editNickname = findViewById(R.id.editNickname);
         spinnerGender = findViewById(R.id.spinnerGender);
         spinnerAge = findViewById(R.id.spinnerAge);

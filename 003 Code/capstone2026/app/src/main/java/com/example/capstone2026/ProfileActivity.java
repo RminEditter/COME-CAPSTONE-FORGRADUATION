@@ -23,6 +23,11 @@ public class ProfileActivity extends AppCompatActivity {
         setContentView(R.layout.activity_profile);
         BottomNavHelper.setup(this);
 
+        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
         editProfileNickname = findViewById(R.id.editProfileNickname);
         spinnerProfileGender = findViewById(R.id.spinnerProfileGender);
         spinnerProfileAge = findViewById(R.id.spinnerProfileAge);

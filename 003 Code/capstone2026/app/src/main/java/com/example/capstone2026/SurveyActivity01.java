@@ -24,6 +24,11 @@ public class SurveyActivity01 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.survey_activity);
 
+        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
         // 뷰 초기화
         rgBean = findViewById(R.id.rgBean);
         rgStyle = findViewById(R.id.rgStyle);
