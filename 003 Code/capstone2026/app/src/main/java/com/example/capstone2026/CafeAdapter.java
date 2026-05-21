@@ -1,5 +1,6 @@
 package com.example.capstone2026;
 
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -63,25 +64,25 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
             holder.tvVisitRecord.setText("방문 기록 없음");
         }
 
-        holder.itemView.setOnClickListener(v -> {
-            String cafeName = result.cafe.name;
-
-            String uriString = "nmap://search?query=" + cafeName + "&appname=com.example.capstone2026";
-            android.net.Uri uri = android.net.Uri.parse(uriString);
-            android.content.Intent intent =
-                    new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
-
-            try {
-                v.getContext().startActivity(intent);
-            } catch (Exception e) {
-                String webUrl = "https://www.google.com/maps/search/" + cafeName;
-                android.content.Intent webIntent =
-                        new android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
-                                android.net.Uri.parse(webUrl)
-                        );
-                v.getContext().startActivity(webIntent);
+        StringBuilder tagText = new StringBuilder();
+        if (result.cafe.tags != null) {
+            for (Tag tag : result.cafe.tags) {
+                tagText.append("#").append(tag.getKoreanLabel()).append(" ");
             }
+        }
+
+        holder.tvTags.setText(tagText.toString());
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), CafeDetailActivity.class);
+
+            intent.putExtra("cafe_id", result.cafe.id);
+            intent.putExtra("cafe_name", result.cafe.name);
+            intent.putExtra("cafe_address", result.cafe.address);
+            intent.putExtra("cafe_reason", result.reason);
+            intent.putExtra("cafe_tags", tagText.toString());
+
+            v.getContext().startActivity(intent);
         });
     }
 

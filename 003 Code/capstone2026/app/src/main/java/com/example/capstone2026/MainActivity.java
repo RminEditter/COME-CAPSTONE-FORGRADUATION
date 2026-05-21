@@ -211,6 +211,12 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+        Button btnFavoriteList = findViewById(R.id.btnFavoriteList);
+
+        btnFavoriteList.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, FavoriteActivity.class);
+            startActivity(intent);
+        });
     }
     private void updateAllCafeTags() {
         db.collection("cafes").get().addOnCompleteListener(task -> {
