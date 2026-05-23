@@ -41,7 +41,6 @@
         <activity android:name=".VisitRecordActivity" android:exported="false" />
         <activity android:name=".CafeDetailActivity" />
         <activity android:name=".FavoriteActivity" />
-        <activity android:name=".VisitRecordEditActivity" />
         <activity android:name=".SurveyActivity01" android:exported="false" />
         <activity android:name=".MainActivity01" android:exported="false" />
         <activity android:name=".VisitHistoryActivity" android:exported="false" />

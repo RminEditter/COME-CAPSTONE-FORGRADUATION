@@ -4,9 +4,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -37,28 +41,43 @@ public class VisitHistoryAdapter extends RecyclerView.Adapter<VisitHistoryAdapte
         holder.tvRating.setText("별점: " + record.getRating());
         holder.tvMemo.setText("메모: " + record.getMemo());
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA);
-        String date = sdf.format(new Date(record.getVisitedAt()));
-        holder.tvDate.setText("방문일: " + date);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+        holder.tvDate.setText(sdf.format(new Date(record.getVisitedAt())));
 
+        // [보안 핵심] 현재 로그인한 유저의 UID 가져오기
+        String currentUid = "";
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            currentUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        }
+
+        // 현재 유저가 이 글의 작성자인지 확인하는 보이지 않는 자물쇠
+        final boolean isOwner = currentUid.equals(record.getUserUid());
+
+        // 1. 길게 누를 때 (삭제 로직)
         holder.itemView.setOnLongClickListener(v -> {
+            // 작성자가 아니라면 삭제 차단!
+            if (!isOwner) {
+                Toast.makeText(v.getContext(), "본인이 작성한 기록만 삭제할 수 있습니다.", Toast.LENGTH_SHORT).show();
+                return true; // 이벤트 소비
+            }
 
             new android.app.AlertDialog.Builder(v.getContext())
-                    .setTitle("삭제")
-                    .setMessage("이 방문 기록을 삭제할까요?")
+                    .setTitle("방문 기록 삭제")
+                    .setMessage("이 방문 기록을 삭제하시겠습니까?")
                     .setPositiveButton("삭제", (dialog, which) -> {
-
-                        new Thread(() -> {
-                            AppDatabase db = AppDatabase.getInstance(v.getContext());
-                            db.visitRecordDao().delete(record);
-
-                            ((android.app.Activity) v.getContext()).runOnUiThread(() -> {
-                                recordList.remove(position);
-                                notifyDataSetChanged();
-                            });
-
-                        }).start();
-
+                        FirebaseFirestore.getInstance()
+                                .collection("visit_records")
+                                .document(record.getFbId())
+                                .delete()
+                                .addOnSuccessListener(aVoid -> {
+                                    Toast.makeText(v.getContext(), "삭제되었습니다.", Toast.LENGTH_SHORT).show();
+                                    recordList.remove(position);
+                                    notifyItemRemoved(position);
+                                    notifyItemRangeChanged(position, recordList.size());
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(v.getContext(), "삭제 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
                     })
                     .setNegativeButton("취소", null)
                     .show();
@@ -66,14 +85,21 @@ public class VisitHistoryAdapter extends RecyclerView.Adapter<VisitHistoryAdapte
             return true;
         });
 
+        // 2. 짧게 누를 때 (수정 화면 이동 로직)
         holder.itemView.setOnClickListener(v -> {
+            // 작성자가 아니라면 수정화면 진입 차단!
+            if (!isOwner) {
+                Toast.makeText(v.getContext(), "본인이 작성한 기록만 수정할 수 있습니다.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             android.content.Intent intent = new android.content.Intent(
                     v.getContext(),
                     VisitRecordActivity.class
             );
 
             intent.putExtra("mode", "edit");
-            intent.putExtra("id", record.getId());
+            intent.putExtra("id", record.getFbId());
             intent.putExtra("cafeName", record.getCafeName());
             intent.putExtra("rating", record.getRating());
             intent.putExtra("memo", record.getMemo());
@@ -93,7 +119,6 @@ public class VisitHistoryAdapter extends RecyclerView.Adapter<VisitHistoryAdapte
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-
             tvCafeName = itemView.findViewById(R.id.tvCafeName);
             tvRating = itemView.findViewById(R.id.tvRating);
             tvMemo = itemView.findViewById(R.id.tvMemo);

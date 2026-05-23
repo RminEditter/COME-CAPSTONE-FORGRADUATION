@@ -9,6 +9,10 @@ import android.widget.Toast;
 import android.content.Intent;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.HashMap;
+import java.util.Map;
+
 public class VisitRecordActivity extends AppCompatActivity {
 
     private TextView tvCafeName;
@@ -18,14 +22,18 @@ public class VisitRecordActivity extends AppCompatActivity {
 
     private String cafeName;
     private String mode;
-    private int recordId;
+    private String recordId; // [수정] Firestore는 문서 ID가 문자열(String)입니다.
     private long visitedAt;
+
+    private FirebaseFirestore db; // [추가] 파이어베이스 변수
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_visit_record);
         BottomNavHelper.setup(this);
+
+        db = FirebaseFirestore.getInstance(); // 초기화
 
         androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
         if (btnBack != null) {
@@ -40,24 +48,19 @@ public class VisitRecordActivity extends AppCompatActivity {
         mode = getIntent().getStringExtra("mode");
         cafeName = getIntent().getStringExtra("cafeName");
 
-        if (cafeName == null) {
-            cafeName = "알 수 없는 카페";
+        if (cafeName != null) {
+            tvCafeName.setText(cafeName);
         }
 
-        tvCafeName.setText(cafeName);
-
         if ("edit".equals(mode)) {
-            recordId = getIntent().getIntExtra("id", -1);
-            float rating = getIntent().getFloatExtra("rating", 3.0f);
+            recordId = getIntent().getStringExtra("id"); // String으로 받음
+            float rating = getIntent().getFloatExtra("rating", 0.0f);
             String memo = getIntent().getStringExtra("memo");
-            visitedAt = getIntent().getLongExtra("visitedAt", System.currentTimeMillis());
+            visitedAt = getIntent().getLongExtra("visitedAt", 0);
 
             ratingBar.setRating(rating);
             etMemo.setText(memo);
-            btnSaveVisit.setText("방문 기록 수정");
-        } else {
-            visitedAt = System.currentTimeMillis();
-            btnSaveVisit.setText("방문 기록 저장");
+            btnSaveVisit.setText("수정하기");
         }
 
         btnSaveVisit.setOnClickListener(v -> {
@@ -73,53 +76,51 @@ public class VisitRecordActivity extends AppCompatActivity {
         float rating = ratingBar.getRating();
         String memo = etMemo.getText().toString().trim();
 
-        VisitRecord record = new VisitRecord(
-                cafeName,
-                rating,
-                memo,
-                System.currentTimeMillis()
-        );
+        // 현재 로그인한 유저의 고유 UID 가져오기
+        String currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            db.visitRecordDao().insert(record);
+        Map<String, Object> record = new HashMap<>();
+        record.put("cafeName", cafeName);
+        record.put("rating", rating);
+        record.put("memo", memo);
+        record.put("visitedAt", System.currentTimeMillis());
+        record.put("userUid", currentUid); // 👈 유저 ID 도장 찍기!
 
-            runOnUiThread(() -> {
-                Toast.makeText(this, "방문 기록이 저장되었습니다.", Toast.LENGTH_SHORT).show();
-
-                Intent intent = new Intent(this, VisitHistoryActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-                finish();
-            });
-        }).start();
+        db.collection("visit_records")
+                .add(record)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(this, "방문 기록이 서버에 저장되었습니다.", Toast.LENGTH_SHORT).show();
+                    goToHistory();
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "저장 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void updateVisitRecord() {
         float rating = ratingBar.getRating();
         String memo = etMemo.getText().toString().trim();
 
-        VisitRecord record = new VisitRecord(
-                cafeName,
-                rating,
-                memo,
-                visitedAt
-        );
+        String currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        record.setId(recordId);
+        Map<String, Object> record = new HashMap<>();
+        record.put("cafeName", cafeName);
+        record.put("rating", rating);
+        record.put("memo", memo);
+        record.put("visitedAt", visitedAt);
+        record.put("userUid", currentUid); // 👈 수정할 때도 유저 ID 유지
 
-        new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            db.visitRecordDao().update(record);
+        db.collection("visit_records").document(recordId)
+                .set(record)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "방문 기록이 수정되었습니다.", Toast.LENGTH_SHORT).show();
+                    goToHistory();
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "수정 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
 
-            runOnUiThread(() -> {
-                Toast.makeText(this, "방문 기록이 수정되었습니다.", Toast.LENGTH_SHORT).show();
-
-                Intent intent = new Intent(this, VisitHistoryActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-                finish();
-            });
-        }).start();
+    private void goToHistory() {
+        Intent intent = new Intent(this, VisitHistoryActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        finish();
     }
 }

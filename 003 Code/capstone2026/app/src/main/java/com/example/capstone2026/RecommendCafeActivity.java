@@ -7,6 +7,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +19,6 @@ public class RecommendCafeActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private CafeAdapter adapter;
 
-    // 이전 화면에서 추천 결과를 임시로 담아두는 변수
     public static List<Recommender.Recommendation> recommendationList;
 
     @Override
@@ -24,11 +26,6 @@ public class RecommendCafeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recommend_cafe);
         BottomNavHelper.setup(this);
-
-        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
 
         recyclerView = findViewById(R.id.recyclerViewCafes);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -45,22 +42,45 @@ public class RecommendCafeActivity extends AppCompatActivity {
     }
 
     private void loadRatingStats() {
-        new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            List<CafeRatingStats> statsList = db.visitRecordDao().getCafeRatingStats();
+        // [수정] Room DB 대신 파이어베이스에서 전체 방문 기록을 가져와 별점 통계 계산
+        FirebaseFirestore.getInstance().collection("visit_records")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Map<String, CafeRatingStats> map = new HashMap<>();
 
-            Map<String, CafeRatingStats> map = new HashMap<>();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            String cafeName = document.getString("cafeName");
+                            Double ratingDouble = document.getDouble("rating");
+                            float rating = ratingDouble != null ? ratingDouble.floatValue() : 0.0f;
 
-            for (CafeRatingStats stats : statsList) {
-                map.put(stats.cafeName, stats);
-            }
+                            if (cafeName == null) continue;
 
-            runOnUiThread(() -> {
-                if (adapter != null) {
-                    adapter.setRatingStatsMap(map);
-                }
-            });
+                            // 맵에 이미 해당 카페 통계가 있다면 갱신, 없다면 새로 만들기
+                            if (map.containsKey(cafeName)) {
+                                CafeRatingStats stats = map.get(cafeName);
+                                if (stats != null) {
+                                    // 기존 평균 점수와 개수를 이용해 새로운 평균 계산 (임시 계산 방식)
+                                    float totalRating = (stats.avgRating * stats.visitCount) + rating;
+                                    stats.visitCount += 1;
+                                    stats.avgRating = totalRating / stats.visitCount;
+                                }
+                            } else {
+                                CafeRatingStats stats = new CafeRatingStats();
+                                stats.cafeName = cafeName;
+                                stats.avgRating = rating;
+                                stats.visitCount = 1;
+                                map.put(cafeName, stats);
+                            }
+                        }
 
-        }).start();
+                        // 어댑터에 계산된 통계 맵 적용
+                        if (adapter != null) {
+                            adapter.setRatingStatsMap(map);
+                        }
+                    } else {
+                        Toast.makeText(this, "통계 데이터 로드 실패", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 }
