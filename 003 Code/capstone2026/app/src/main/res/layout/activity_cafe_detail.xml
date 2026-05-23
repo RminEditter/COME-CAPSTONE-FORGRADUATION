@@ -49,5 +49,13 @@
             android:text="♡ 즐겨찾기 추가"
             android:textSize="18sp" />
 
+        <Button
+            android:id="@+id/btnAddVisitRecord"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="방문 기록 작성"
+            android:textSize="18sp"
+            android:layout_marginTop="12dp" />
+
     </LinearLayout>
 </ScrollView>

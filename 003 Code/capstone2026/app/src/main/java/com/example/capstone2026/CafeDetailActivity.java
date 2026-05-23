@@ -5,13 +5,14 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.content.Intent;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 public class CafeDetailActivity extends AppCompatActivity {
 
     private TextView txtCafeName, txtAddress, txtTags, txtReason;
-    private Button btnFavorite;
+    private Button btnFavorite, btnAddVisitRecord;
 
     private String cafeId;
     private String cafeName;
@@ -28,6 +29,8 @@ public class CafeDetailActivity extends AppCompatActivity {
         txtTags = findViewById(R.id.txtDetailTags);
         txtReason = findViewById(R.id.txtDetailReason);
         btnFavorite = findViewById(R.id.btnFavorite);
+        btnAddVisitRecord = findViewById(R.id.btnAddVisitRecord);
+
 
         cafeId = getIntent().getStringExtra("cafe_id");
         cafeName = getIntent().getStringExtra("cafe_name");
@@ -44,6 +47,11 @@ public class CafeDetailActivity extends AppCompatActivity {
         loadFavoriteState();
 
         btnFavorite.setOnClickListener(v -> toggleFavorite());
+        btnAddVisitRecord.setOnClickListener(v -> {
+            Intent intent = new Intent(CafeDetailActivity.this, VisitRecordEditActivity.class);
+            intent.putExtra("cafe_name", cafeName);
+            startActivity(intent);
+        });
     }
 
     private void loadFavoriteState() {
