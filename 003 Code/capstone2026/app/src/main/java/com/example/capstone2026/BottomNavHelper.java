@@ -8,41 +8,56 @@ import androidx.appcompat.widget.AppCompatButton;
 public class BottomNavHelper {
 
     public static void setup(Activity activity) {
-        AppCompatButton btnMap = activity.findViewById(R.id.btnNavMap);
-        AppCompatButton btnMain = activity.findViewById(R.id.btnNavMain);
-        AppCompatButton btnProfile = activity.findViewById(R.id.btnNavProfile);
 
-        if (btnMap != null) {
-            btnMap.setOnClickListener(v -> {
+        AppCompatButton btnNavMap =
+                activity.findViewById(R.id.btnNavMap);
+
+        AppCompatButton btnNavMain =
+                activity.findViewById(R.id.btnNavMain);
+
+        AppCompatButton btnNavProfile =
+                activity.findViewById(R.id.btnNavProfile);
+
+        // 지도 버튼
+        if (btnNavMap != null) {
+            btnNavMap.setOnClickListener(v -> {
+
                 if (!(activity instanceof RecommendCafeActivity)) {
-                    activity.startActivity(new Intent(activity, RecommendCafeActivity.class));
+
+                    Intent intent =
+                            new Intent(activity, RecommendCafeActivity.class);
+
+                    activity.startActivity(intent);
                 }
             });
         }
 
-        if (btnMain != null) {
-            btnMain.setOnClickListener(v -> {
+        // 메인 버튼
+        if (btnNavMain != null) {
+            btnNavMain.setOnClickListener(v -> {
+
                 if (!(activity instanceof MainActivity)) {
-                    activity.startActivity(new Intent(activity, MainActivity.class));
+
+                    Intent intent =
+                            new Intent(activity, MainActivity.class);
+
+                    activity.startActivity(intent);
                 }
             });
         }
 
-        if (btnProfile != null) {
-            btnProfile.setOnClickListener(v -> {
+        // 프로필 버튼
+        if (btnNavProfile != null) {
+            btnNavProfile.setOnClickListener(v -> {
+
                 if (!(activity instanceof ProfileActivity)) {
-                    activity.startActivity(new Intent(activity, ProfileActivity.class));
+
+                    Intent intent =
+                            new Intent(activity, ProfileActivity.class);
+
+                    activity.startActivity(intent);
                 }
             });
         }
-
-        if (btnProfile != null) {
-            btnProfile.setOnClickListener(v -> {
-                if (!(activity instanceof ProfileActivity)) {
-                    activity.startActivity(new Intent(activity, ProfileActivity.class));
-                }
-            });
-        }
-
     }
 }
