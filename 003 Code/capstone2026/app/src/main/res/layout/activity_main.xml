@@ -197,6 +197,9 @@
             android:textColor="@android:color/white"
             android:textSize="14sp"
             android:textStyle="bold" />
+
+        <include layout="@layout/bottom_nav_bar" />
+
     </LinearLayout>
 
 
