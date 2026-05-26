@@ -17,15 +17,35 @@
             android:orientation="vertical"
             android:padding="24dp">
 
-            <TextView
-                android:id="@+id/txtHomeTitle"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:text="안녕하세요, CafeFit 입니다"
-                android:textColor="@color/brown_dark"
-                android:textSize="28sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/txtHomeTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="안녕하세요, CafeFit 입니다"
+                    android:textColor="@color/brown_dark"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnHomeMenu"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_back_button"
+                    android:text="☰"
+                    android:textAllCaps="false"
+                    android:textColor="@color/brown_dark"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/txtHomeSub"
@@ -95,6 +115,7 @@
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:textSize="15sp" />
+
             </LinearLayout>
 
             <TextView
@@ -121,6 +142,7 @@
                     android:text="최근 본 카페가 아직 없습니다."
                     android:textColor="@color/text_dark"
                     android:textSize="15sp" />
+
             </LinearLayout>
 
             <TextView
@@ -138,7 +160,8 @@
                 android:layout_marginTop="12dp"
                 android:background="@drawable/bg_home_card"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="16dp"
+                android:layout_marginBottom="20dp">
 
                 <TextView
                     android:id="@+id/txtTopCafe1"
@@ -165,44 +188,8 @@
                     android:text="3. 디저트가 유명한 카페  ★4.6"
                     android:textColor="@color/text_dark"
                     android:textSize="15sp" />
+
             </LinearLayout>
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnSurveyStart"
-                android:layout_width="match_parent"
-                android:layout_height="54dp"
-                android:layout_marginTop="28dp"
-                android:background="@drawable/rounded_beige_button"
-                android:text="취향 설문 다시 하기"
-                android:textAllCaps="false"
-                android:textColor="@color/brown_dark"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnVisitHistory"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="14dp"
-                android:background="@drawable/rounded_brown_button"
-                android:text="방문 기록 보기"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnFavoriteList"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/rounded_brown_button"
-                android:text="즐겨찾기 목록"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:textStyle="bold" />
 
         </LinearLayout>
 

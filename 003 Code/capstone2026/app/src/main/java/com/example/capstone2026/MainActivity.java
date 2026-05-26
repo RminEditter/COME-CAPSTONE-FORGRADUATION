@@ -4,8 +4,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Button;
 import android.widget.EditText;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,7 +21,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private EditText editSearch;
-    private AppCompatButton btnSurveyStart, btnRecommendCafe, btnVisitHistory, btnFavoriteList;
+    private AppCompatButton btnRecommendCafe, btnHomeMenu;
     private TextView txtRecommendCafeName, txtRecommendCafeDesc, txtRecentCafe;
 
     private List<Tag> selectedTags = new ArrayList<>();
@@ -38,9 +38,6 @@ public class MainActivity extends AppCompatActivity {
         setupClickListeners();
 
         BottomNavHelper.setup(this);
-
-        // 태그 업데이트 코드 건들지마시길.
-        // updateAllCafeTags();
     }
 
     @Override
@@ -50,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (selectedTags.isEmpty()) {
             txtRecommendCafeName.setText("나만의 카페를 찾아보세요!");
-            txtRecommendCafeDesc.setText("아래 '취향 설문' 버튼을 눌러 설문을 시작해주세요.");
+            txtRecommendCafeDesc.setText("오른쪽 상단 메뉴에서 취향 설문을 시작해주세요.");
         } else {
             txtRecommendCafeName.setText("취향 분석 중...");
             txtRecommendCafeDesc.setText("DB에서 카페를 찾고 있습니다 🔍");
@@ -60,10 +57,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void initViews() {
         editSearch = findViewById(R.id.editSearch);
-        btnSurveyStart = findViewById(R.id.btnSurveyStart);
         btnRecommendCafe = findViewById(R.id.btnRecommendCafe);
-        btnVisitHistory = findViewById(R.id.btnVisitHistory);
-        btnFavoriteList = findViewById(R.id.btnFavoriteList);
+        btnHomeMenu = findViewById(R.id.btnHomeMenu);
 
         txtRecommendCafeName = findViewById(R.id.txtRecommendCafeName);
         txtRecommendCafeDesc = findViewById(R.id.txtRecommendCafeDesc);
@@ -158,11 +153,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        btnSurveyStart.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, SurveyActivity.class);
-            startActivity(intent);
-        });
-
         btnRecommendCafe.setOnClickListener(v -> {
             String currentTitle = txtRecommendCafeName.getText().toString();
 
@@ -182,14 +172,35 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        btnVisitHistory.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, VisitHistoryActivity.class);
-            startActivity(intent);
-        });
+        btnHomeMenu.setOnClickListener(v -> {
+            PopupMenu popupMenu = new PopupMenu(MainActivity.this, btnHomeMenu);
 
-        btnFavoriteList.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, FavoriteActivity.class);
-            startActivity(intent);
+            popupMenu.getMenu().add("취향 설문 다시 하기");
+            popupMenu.getMenu().add("방문 기록 보기");
+            popupMenu.getMenu().add("즐겨찾기 목록");
+
+            popupMenu.setOnMenuItemClickListener(item -> {
+                String title = item.getTitle().toString();
+
+                if (title.equals("취향 설문 다시 하기")) {
+                    startActivity(new Intent(MainActivity.this, SurveyActivity.class));
+                    return true;
+                }
+
+                if (title.equals("방문 기록 보기")) {
+                    startActivity(new Intent(MainActivity.this, VisitHistoryActivity.class));
+                    return true;
+                }
+
+                if (title.equals("즐겨찾기 목록")) {
+                    startActivity(new Intent(MainActivity.this, FavoriteActivity.class));
+                    return true;
+                }
+
+                return false;
+            });
+
+            popupMenu.show();
         });
 
         editSearch.setOnEditorActionListener((v, actionId, event) -> {
