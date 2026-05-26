@@ -199,11 +199,18 @@
             android:textAllCaps="false" />
         <include layout="@layout/bottom_nav_bar" />
 
-        <Button
-            android:id="@+id/btnFavoriteList"
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnFavorite"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="즐겨찾기 목록" />    </LinearLayout>
+            android:layout_height="48dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/rounded_brown_button"
+            android:text="즐겨찾기 목록"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
 
 
