@@ -172,19 +172,6 @@
             android:textSize="15sp"
             android:textStyle="bold" />
 
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnProfile"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:background="@drawable/rounded_beige_button"
-            android:paddingStart="20dp"
-            android:paddingEnd="20dp"
-            android:text="프로필 편집"
-            android:textAllCaps="false"
-            android:textColor="@color/brown_dark"
-            android:textSize="14sp"
-            android:textStyle="bold" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnVisitHistory"
