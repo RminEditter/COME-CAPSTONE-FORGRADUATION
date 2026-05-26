@@ -81,7 +81,6 @@ public class MainActivity extends AppCompatActivity {
         txtRecommendCafeName = findViewById(R.id.txtRecommendCafeName);
         txtRecommendCafeDesc = findViewById(R.id.txtRecommendCafeDesc);
         txtRecentCafe = findViewById(R.id.txtRecentCafe);
-        btnProfile = findViewById(R.id.btnProfile);
 
         SharedPreferences recentPrefs = getSharedPreferences("CafeFitRecent", MODE_PRIVATE);
         txtRecentCafe.setText(recentPrefs.getString("recentCafe", "최근 본 카페가 없습니다."));
