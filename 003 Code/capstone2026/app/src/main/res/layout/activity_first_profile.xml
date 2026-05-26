@@ -92,7 +92,7 @@
             android:layout_marginTop="10dp"
             android:background="@drawable/bg_search_box" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnNext"
             android:layout_width="match_parent"
             android:layout_height="56dp"
