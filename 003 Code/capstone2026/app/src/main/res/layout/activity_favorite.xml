@@ -5,21 +5,29 @@
     android:orientation="vertical"
     android:padding="20dp">
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="즐겨찾기 목록"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvFavorites"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnNext"
+        android:id="@+id/btnFavorite"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:layout_marginTop="34dp"
+        android:layout_marginTop="16dp"
         android:background="@drawable/rounded_brown_button"
         android:text="즐겨찾기 목록"
         android:textAllCaps="false"
-        android:textColor="@color/white"
+        android:textColor="@android:color/white"
         android:textSize="16sp"
         android:textStyle="bold" />
 
