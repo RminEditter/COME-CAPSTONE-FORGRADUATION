@@ -10,6 +10,7 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -21,12 +22,9 @@ public class ProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
-        BottomNavHelper.setup(this);
 
-        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
+        setupBackButton();
+        BottomNavHelper.setup(this);
 
         editProfileNickname = findViewById(R.id.editProfileNickname);
         spinnerProfileGender = findViewById(R.id.spinnerProfileGender);
@@ -38,35 +36,30 @@ public class ProfileActivity extends AppCompatActivity {
         String[] ageItems = {"10대", "20대", "30대", "40대 이상"};
 
         ArrayAdapter<String> genderAdapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, genderItems);
+                this,
+                android.R.layout.simple_spinner_item,
+                genderItems
+        );
         genderAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerProfileGender.setAdapter(genderAdapter);
 
         ArrayAdapter<String> ageAdapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, ageItems);
+                this,
+                android.R.layout.simple_spinner_item,
+                ageItems
+        );
         ageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerProfileAge.setAdapter(ageAdapter);
 
         SharedPreferences prefs = getSharedPreferences("CafeFitProfile", MODE_PRIVATE);
+
         String nickname = prefs.getString("nickname", "");
         String gender = prefs.getString("gender", "선택 안 함");
         String age = prefs.getString("age", "20대");
 
         editProfileNickname.setText(nickname);
-
-        for (int i = 0; i < genderItems.length; i++) {
-            if (genderItems[i].equals(gender)) {
-                spinnerProfileGender.setSelection(i);
-                break;
-            }
-        }
-
-        for (int i = 0; i < ageItems.length; i++) {
-            if (ageItems[i].equals(age)) {
-                spinnerProfileAge.setSelection(i);
-                break;
-            }
-        }
+        setSpinnerSelection(spinnerProfileGender, genderItems, gender);
+        setSpinnerSelection(spinnerProfileAge, ageItems, age);
 
         btnSaveProfile.setOnClickListener(v -> {
             String newNickname = editProfileNickname.getText().toString().trim();
@@ -93,5 +86,22 @@ public class ProfileActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+    }
+
+    private void setupBackButton() {
+        AppCompatButton btnBack = findViewById(R.id.btnBack);
+
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+    }
+
+    private void setSpinnerSelection(Spinner spinner, String[] items, String value) {
+        for (int i = 0; i < items.length; i++) {
+            if (items[i].equals(value)) {
+                spinner.setSelection(i);
+                break;
+            }
+        }
     }
 }

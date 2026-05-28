@@ -9,6 +9,7 @@ import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,12 +25,9 @@ public class SurveyActivity01 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.survey_activity);
 
-        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
+        setupBackButton();
+        BottomNavHelper.setup(this);
 
-        // 뷰 초기화
         rgBean = findViewById(R.id.rgBean);
         rgStyle = findViewById(R.id.rgStyle);
         rgSize = findViewById(R.id.rgSize);
@@ -41,13 +39,20 @@ public class SurveyActivity01 extends AppCompatActivity {
         btnSubmit.setOnClickListener(v -> submitSurvey());
     }
 
+    private void setupBackButton() {
+        AppCompatButton btnBack = findViewById(R.id.btnBack);
+
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+    }
+
     private void submitSurvey() {
         String bean = getSelectedText(rgBean);
         String style = getSelectedText(rgStyle);
         String size = getSelectedText(rgSize);
         String companion = getSelectedText(rgCompanion);
 
-        // 모든 항목 선택 여부 검사
         if (bean.isEmpty() || style.isEmpty() || size.isEmpty() || companion.isEmpty()) {
             Toast.makeText(this, "모든 항목을 선택해 주세요!", Toast.LENGTH_SHORT).show();
             return;
@@ -56,17 +61,17 @@ public class SurveyActivity01 extends AppCompatActivity {
         boolean dessert = switchDessert.isChecked();
         boolean specialty = switchSpecialty.isChecked();
 
-        // 컨버터를 통해 태그 변환
         List<Tag> userTags = SurveyTagConverter.convertSurveyToTags(
                 bean, style, dessert, specialty, size, companion
         );
 
-        // 결과 전달
         Intent intent = new Intent(this, MainActivity01.class);
         ArrayList<String> tagStrings = new ArrayList<>();
+
         for (Tag t : userTags) {
             tagStrings.add(t.name());
         }
+
         intent.putStringArrayListExtra("selected_tags", tagStrings);
 
         startActivity(intent);
@@ -75,7 +80,11 @@ public class SurveyActivity01 extends AppCompatActivity {
 
     private String getSelectedText(RadioGroup group) {
         int id = group.getCheckedRadioButtonId();
-        if (id == -1) return "";
+
+        if (id == -1) {
+            return "";
+        }
+
         RadioButton rb = findViewById(id);
         return rb.getText().toString();
     }

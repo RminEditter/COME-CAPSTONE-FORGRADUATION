@@ -9,6 +9,7 @@ import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
 
 public class SurveyActivity extends AppCompatActivity {
 
@@ -20,12 +21,9 @@ public class SurveyActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.survey_activity);
-        BottomNavHelper.setup(this);
 
-        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
+        setupBackButton();
+        BottomNavHelper.setup(this);
 
         rgBean = findViewById(R.id.rgBean);
         rgStyle = findViewById(R.id.rgStyle);
@@ -36,8 +34,15 @@ public class SurveyActivity extends AppCompatActivity {
         switchSpecialty = findViewById(R.id.switchSpecialty);
 
         btnSubmit = findViewById(R.id.btnSubmit);
-
         btnSubmit.setOnClickListener(v -> submitSurvey());
+    }
+
+    private void setupBackButton() {
+        AppCompatButton btnBack = findViewById(R.id.btnBack);
+
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
     }
 
     private void submitSurvey() {

@@ -36,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
         setupClickListeners();
-
         BottomNavHelper.setup(this);
     }
 
@@ -72,15 +71,20 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences("CafeFitSurvey", MODE_PRIVATE);
 
         String bean = prefs.getString("bean_tag", "");
-        String scale = prefs.getString("scale_tag", "");
-        String mood = prefs.getString("mood_tag", "");
+        String style = prefs.getString("style_tag", "");
+        String size = prefs.getString("size_tag", "");
+        String companion = prefs.getString("companion_tag", "");
         String dessert = prefs.getString("dessert_tag", "");
+        String specialty = prefs.getString("specialty_tag", "");
 
         selectedTags.clear();
+
         addTagToList(bean);
-        addTagToList(scale);
-        addTagToList(mood);
+        addTagToList(style);
+        addTagToList(size);
+        addTagToList(companion);
         addTagToList(dessert);
+        addTagToList(specialty);
     }
 
     private void addTagToList(String tagStr) {
@@ -97,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         db.collection("cafes")
                 .get()
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
+                    if (task.isSuccessful() && task.getResult() != null) {
                         List<Recommender.CafeModel> cafeModels = new ArrayList<>();
 
                         for (QueryDocumentSnapshot document : task.getResult()) {
@@ -111,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                                     try {
                                         enumTags.add(Tag.valueOf(tagStr));
                                     } catch (IllegalArgumentException e) {
-                                        // 태그 변환 실패 시 무시
+                                        // 변환 실패한 태그는 무시
                                     }
                                 }
                             }
@@ -214,43 +218,6 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(MainActivity.this, "검색어를 입력해주세요!", Toast.LENGTH_SHORT).show();
                 return false;
-            }
-        });
-    }
-
-    private void updateAllCafeTags() {
-        db.collection("cafes").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                List<QueryDocumentSnapshot> docs = new ArrayList<>();
-
-                for (QueryDocumentSnapshot d : task.getResult()) {
-                    docs.add(d);
-                }
-
-                for (int i = 0; i < docs.size(); i++) {
-                    final int index = i;
-
-                    new android.os.Handler().postDelayed(() -> {
-                        QueryDocumentSnapshot document = docs.get(index);
-                        String name = document.getString("name");
-                        String addr = document.getString("address");
-
-                        NaverReviewAnalyzer.analyzeCafe(name, addr, tags -> {
-                            List<String> tagStrings = new ArrayList<>();
-
-                            for (Tag t : tags) {
-                                tagStrings.add(t.name());
-                            }
-
-                            db.collection("cafes")
-                                    .document(document.getId())
-                                    .update("tags", tagStrings);
-
-                            Log.e("CafeFit", "성공: " + name);
-                        });
-
-                    }, i * 500);
-                }
             }
         });
     }

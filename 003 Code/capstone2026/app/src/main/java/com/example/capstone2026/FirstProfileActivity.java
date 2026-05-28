@@ -14,6 +14,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.core.content.ContextCompat;
 
 public class FirstProfileActivity extends AppCompatActivity {
@@ -29,6 +30,7 @@ public class FirstProfileActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(this, "위치 권한이 거부되었습니다. 나중에 다시 설정할 수 있어요.", Toast.LENGTH_SHORT).show();
                 }
+
                 moveToSurvey();
             });
 
@@ -37,10 +39,7 @@ public class FirstProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_first_profile);
 
-        androidx.appcompat.widget.AppCompatButton btnBack = findViewById(R.id.btnBack);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
+        setupBackButton();
 
         editNickname = findViewById(R.id.editNickname);
         spinnerGender = findViewById(R.id.spinnerGender);
@@ -51,12 +50,18 @@ public class FirstProfileActivity extends AppCompatActivity {
         String[] ageItems = {"나이대 선택", "10대", "20대", "30대", "40대 이상"};
 
         ArrayAdapter<String> genderAdapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, genderItems);
+                this,
+                android.R.layout.simple_spinner_item,
+                genderItems
+        );
         genderAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerGender.setAdapter(genderAdapter);
 
         ArrayAdapter<String> ageAdapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, ageItems);
+                this,
+                android.R.layout.simple_spinner_item,
+                ageItems
+        );
         ageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerAge.setAdapter(ageAdapter);
 
@@ -82,6 +87,7 @@ public class FirstProfileActivity extends AppCompatActivity {
 
             SharedPreferences prefs = getSharedPreferences("CafeFitProfile", MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
+
             editor.putString("nickname", nickname);
             editor.putString("gender", gender);
             editor.putString("age", age);
@@ -90,6 +96,14 @@ public class FirstProfileActivity extends AppCompatActivity {
 
             requestLocationPermission();
         });
+    }
+
+    private void setupBackButton() {
+        AppCompatButton btnBack = findViewById(R.id.btnBack);
+
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
     }
 
     private void requestLocationPermission() {

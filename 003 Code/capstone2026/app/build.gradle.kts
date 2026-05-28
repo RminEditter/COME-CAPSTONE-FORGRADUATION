@@ -51,4 +51,6 @@ dependencies {
     implementation("org.json:json:20210307")
     implementation("androidx.room:room-runtime:2.6.1")
     annotationProcessor("androidx.room:room-compiler:2.6.1")
+    implementation("com.google.firebase:firebase-auth")
+
 }

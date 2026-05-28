@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -25,6 +26,8 @@ public class RecommendCafeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recommend_cafe);
+
+        setupBackButton();
         BottomNavHelper.setup(this);
 
         recyclerView = findViewById(R.id.recyclerViewCafes);
@@ -41,8 +44,15 @@ public class RecommendCafeActivity extends AppCompatActivity {
         loadRatingStats();
     }
 
+    private void setupBackButton() {
+        AppCompatButton btnBack = findViewById(R.id.btnBack);
+
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+    }
+
     private void loadRatingStats() {
-        // [수정] Room DB 대신 파이어베이스에서 전체 방문 기록을 가져와 별점 통계 계산
         FirebaseFirestore.getInstance().collection("visit_records")
                 .get()
                 .addOnCompleteListener(task -> {
@@ -54,13 +64,14 @@ public class RecommendCafeActivity extends AppCompatActivity {
                             Double ratingDouble = document.getDouble("rating");
                             float rating = ratingDouble != null ? ratingDouble.floatValue() : 0.0f;
 
-                            if (cafeName == null) continue;
+                            if (cafeName == null) {
+                                continue;
+                            }
 
-                            // 맵에 이미 해당 카페 통계가 있다면 갱신, 없다면 새로 만들기
                             if (map.containsKey(cafeName)) {
                                 CafeRatingStats stats = map.get(cafeName);
+
                                 if (stats != null) {
-                                    // 기존 평균 점수와 개수를 이용해 새로운 평균 계산 (임시 계산 방식)
                                     float totalRating = (stats.avgRating * stats.visitCount) + rating;
                                     stats.visitCount += 1;
                                     stats.avgRating = totalRating / stats.visitCount;
@@ -74,7 +85,6 @@ public class RecommendCafeActivity extends AppCompatActivity {
                             }
                         }
 
-                        // 어댑터에 계산된 통계 맵 적용
                         if (adapter != null) {
                             adapter.setRatingStatsMap(map);
                         }
