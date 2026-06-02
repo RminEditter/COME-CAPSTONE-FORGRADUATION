@@ -1,7 +1,6 @@
 package com.example.capstone2026;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.RadioGroup;
@@ -10,6 +9,14 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SurveyActivity extends AppCompatActivity {
 
@@ -55,6 +62,7 @@ public class SurveyActivity extends AppCompatActivity {
             return;
         }
 
+        // [유지] 기존 태그 분기 로직 완벽 보존
         String beanTag;
         int beanId = rgBean.getCheckedRadioButtonId();
 
@@ -102,23 +110,40 @@ public class SurveyActivity extends AppCompatActivity {
         String dessertTag = switchDessert.isChecked() ? "DESSERT" : "";
         String specialtyTag = switchSpecialty.isChecked() ? "SPECIALTY_DRIP" : "";
 
-        SharedPreferences prefs = getSharedPreferences("CafeFitSurvey", MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "로그인 유저 정보를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        editor.putString("bean_tag", beanTag);
-        editor.putString("style_tag", styleTag);
-        editor.putString("size_tag", sizeTag);
-        editor.putString("companion_tag", companionTag);
-        editor.putString("dessert_tag", dessertTag);
-        editor.putString("specialty_tag", specialtyTag);
+        String currentUid = currentUser.getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        editor.apply();
+        Map<String, Object> userSurveyData = new HashMap<>();
+        userSurveyData.put("bean_tag", beanTag);
+        userSurveyData.put("style_tag", styleTag);
+        userSurveyData.put("size_tag", sizeTag);
+        userSurveyData.put("companion_tag", companionTag);
+        userSurveyData.put("dessert_tag", dessertTag);
+        userSurveyData.put("specialty_tag", specialtyTag);
+        userSurveyData.put("email", currentUser.getEmail());
 
-        Toast.makeText(this, "취향 분석 완료!", Toast.LENGTH_SHORT).show();
+        btnSubmit.setEnabled(false);
 
-        Intent intent = new Intent(SurveyActivity.this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
-        finish();
+        db.collection("users").document(currentUid)
+                .set(userSurveyData, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(SurveyActivity.this, "취향 분석 완료! 프로필 설정을 이어갑니다. 👤", Toast.LENGTH_SHORT).show();
+
+                    // 💡 [수정 핵심 포인트]: 기존 MainActivity 직행 노선을 끊고, FirstProfileActivity로 토스합니다!
+                    Intent intent = new Intent(SurveyActivity.this, FirstProfileActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(intent);
+                    finish(); // 현재 설문 화면은 완전히 종료하여 뒤로가기로 못 돌아오게 방어합니다.
+                })
+                .addOnFailureListener(e -> {
+                    btnSubmit.setEnabled(true);
+                    Toast.makeText(SurveyActivity.this, "서버 저장 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 }
