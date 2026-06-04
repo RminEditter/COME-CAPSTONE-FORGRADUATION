@@ -12,6 +12,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -26,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
     private List<Tag> selectedTags = new ArrayList<>();
     private FirebaseFirestore db;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,25 +37,30 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
 
         initViews();
         setupClickListeners();
         BottomNavHelper.setup(this);
+
+        // 💡 필요시 전체 카페 네이버 리뷰 분석 및 태그 강제 업데이트를 실행하려면 주석을 해제하세요.
+        // updateAllCafeTags();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadUserPreferences();
 
-        if (selectedTags.isEmpty()) {
-            txtRecommendCafeName.setText("나만의 카페를 찾아보세요!");
-            txtRecommendCafeDesc.setText("오른쪽 상단 메뉴에서 취향 설문을 시작해주세요.");
-        } else {
-            txtRecommendCafeName.setText("취향 분석 중...");
-            txtRecommendCafeDesc.setText("DB에서 카페를 찾고 있습니다 🔍");
-            fetchCafesAndRecommend();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "로그인이 필요한 서비스입니다.", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        txtRecommendCafeName.setText("취향 분석 중...");
+        txtRecommendCafeDesc.setText("서버에서 계정 설문 정보를 가져오고 있습니다 🔍");
+
+        loadUserPreferencesFromFirestore(currentUser.getUid());
     }
 
     private void initViews() {
@@ -67,24 +76,79 @@ public class MainActivity extends AppCompatActivity {
         txtRecentCafe.setText(recentPrefs.getString("recentCafe", "최근 본 카페가 없습니다."));
     }
 
-    private void loadUserPreferences() {
-        SharedPreferences prefs = getSharedPreferences("CafeFitSurvey", MODE_PRIVATE);
+    private void updateAllCafeTags() {
+        db.collection("cafes").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                List<QueryDocumentSnapshot> docs = new ArrayList<>();
 
-        String bean = prefs.getString("bean_tag", "");
-        String style = prefs.getString("style_tag", "");
-        String size = prefs.getString("size_tag", "");
-        String companion = prefs.getString("companion_tag", "");
-        String dessert = prefs.getString("dessert_tag", "");
-        String specialty = prefs.getString("specialty_tag", "");
+                for (QueryDocumentSnapshot d : task.getResult()) {
+                    docs.add(d);
+                }
 
-        selectedTags.clear();
+                for (int i = 0; i < docs.size(); i++) {
+                    final int index = i;
 
-        addTagToList(bean);
-        addTagToList(style);
-        addTagToList(size);
-        addTagToList(companion);
-        addTagToList(dessert);
-        addTagToList(specialty);
+                    new android.os.Handler().postDelayed(() -> {
+                        QueryDocumentSnapshot document = docs.get(index);
+                        String name = document.getString("name");
+                        String addr = document.getString("address");
+
+                        NaverReviewAnalyzer.analyzeCafe(name, addr, tags -> {
+                            List<String> tagStrings = new ArrayList<>();
+
+                            for (Tag t : tags) {
+                                tagStrings.add(t.name());
+                            }
+
+                            db.collection("cafes")
+                                    .document(document.getId())
+                                    .update("tags", tagStrings);
+
+                            Log.e("CafeFit", "성공: " + name);
+                        });
+
+                    }, i * 500);
+                }
+            }
+        });
+    }
+
+    private void loadUserPreferencesFromFirestore(String uid) {
+        db.collection("users").document(uid)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        DocumentSnapshot document = task.getResult();
+                        selectedTags.clear();
+
+                        if (document.exists()) {
+                            String bean = document.getString("bean_tag");
+                            String style = document.getString("style_tag");
+                            String size = document.getString("size_tag");
+                            String companion = document.getString("companion_tag");
+                            String dessert = document.getString("dessert_tag");
+                            String specialty = document.getString("specialty_tag");
+
+                            addTagToList(bean);
+                            addTagToList(style);
+                            addTagToList(size);
+                            addTagToList(companion);
+                            addTagToList(dessert);
+                            addTagToList(specialty);
+                        }
+
+                        if (selectedTags.isEmpty()) {
+                            txtRecommendCafeName.setText("나만의 카페를 찾아보세요!");
+                            txtRecommendCafeDesc.setText("오른쪽 상단 메뉴에서 취향 설문을 시작해주세요.");
+                        } else {
+                            fetchCafesAndRecommend();
+                        }
+                    } else {
+                        Log.e("MainActivity", "서버 프로필 로드 실패", task.getException());
+                        txtRecommendCafeName.setText("데이터 로드 실패");
+                        txtRecommendCafeDesc.setText("네트워크 상태를 확인해주세요 😢");
+                    }
+                });
     }
 
     private void addTagToList(String tagStr) {
