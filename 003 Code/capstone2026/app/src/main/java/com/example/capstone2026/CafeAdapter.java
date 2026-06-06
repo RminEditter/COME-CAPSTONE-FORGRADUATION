@@ -1,10 +1,13 @@
 package com.example.capstone2026;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -47,6 +50,7 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull CafeAdapter.ViewHolder holder, int position) {
+
         Recommender.Recommendation result = resultList.get(position);
 
         holder.tvName.setText(result.cafe.name);
@@ -65,16 +69,55 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         }
 
         StringBuilder tagText = new StringBuilder();
+
         if (result.cafe.tags != null) {
             for (Tag tag : result.cafe.tags) {
-                tagText.append("#").append(tag.getKoreanLabel()).append(" ");
+                tagText.append("#")
+                        .append(tag.getKoreanLabel())
+                        .append(" ");
             }
         }
 
         holder.tvTags.setText(tagText.toString());
 
+        // 지도 버튼
+        holder.btnMap.setOnClickListener(v -> {
+
+            if (result.cafe == null) {
+                Toast.makeText(
+                        v.getContext(),
+                        "카페 정보가 없습니다.",
+                        Toast.LENGTH_SHORT
+                ).show();
+                return;
+            }
+
+            String query;
+
+            if (result.cafe.address != null &&
+                    !result.cafe.address.isEmpty()) {
+                query = result.cafe.address;
+            } else {
+                query = result.cafe.name;
+            }
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+
+            intent.setData(
+                    Uri.parse(
+                            "https://map.naver.com/v5/search/"
+                                    + Uri.encode(query)
+                    )
+            );
+
+            v.getContext().startActivity(intent);
+        });
+
+        // 카드 클릭 시 상세페이지 이동
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(v.getContext(), CafeDetailActivity.class);
+
+            Intent intent =
+                    new Intent(v.getContext(), CafeDetailActivity.class);
 
             intent.putExtra("cafe_id", result.cafe.id);
             intent.putExtra("cafe_name", result.cafe.name);
@@ -105,6 +148,8 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         TextView tvVisitRecord;
         TextView tvTags;
 
+        Button btnMap;
+
         public ViewHolder(@NonNull View v) {
             super(v);
 
@@ -115,6 +160,8 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
             tvMyRating = v.findViewById(R.id.tv_my_rating);
             tvVisitRecord = v.findViewById(R.id.tv_visit_record);
             tvTags = v.findViewById(R.id.tv_tags);
+
+            btnMap = v.findViewById(R.id.btnMap);
         }
     }
 }

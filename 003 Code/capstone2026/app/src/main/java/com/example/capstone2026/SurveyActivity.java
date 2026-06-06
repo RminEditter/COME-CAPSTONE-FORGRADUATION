@@ -8,6 +8,13 @@ import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
@@ -114,11 +121,35 @@ public class SurveyActivity extends AppCompatActivity {
 
         editor.apply();
 
-        Toast.makeText(this, "취향 분석 완료!", Toast.LENGTH_SHORT).show();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-        Intent intent = new Intent(SurveyActivity.this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
-        finish();
+        if (user == null) {
+            Toast.makeText(this, "로그인 정보가 없습니다. 다시 로그인해주세요.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<String, Object> surveyData = new HashMap<>();
+        surveyData.put("bean_tag", beanTag);
+        surveyData.put("style_tag", styleTag);
+        surveyData.put("size_tag", sizeTag);
+        surveyData.put("companion_tag", companionTag);
+        surveyData.put("dessert_tag", dessertTag);
+        surveyData.put("specialty_tag", specialtyTag);
+
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(user.getUid())
+                .set(surveyData, com.google.firebase.firestore.SetOptions.merge())
+                .addOnSuccessListener(unused -> {
+                    Toast.makeText(this, "취향 분석 완료!", Toast.LENGTH_SHORT).show();
+
+                    Intent intent = new Intent(SurveyActivity.this, MainActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(intent);
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "설문 저장 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 }
