@@ -9,6 +9,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
@@ -21,6 +22,17 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.location.Location;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+
 public class MainActivity extends AppCompatActivity {
 
     private EditText editSearch;
@@ -31,10 +43,19 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
 
+    private static final int LOCATION_PERMISSION_REQUEST = 1001;
+    private FusedLocationProviderClient fusedLocationClient;
+
+    // 현재 사용자 위치 저장용 변수
+    private double currentLat = 36.3622;   // 위치 못 가져오면 임시로 유성구청 기준
+    private double currentLng = 127.3568;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
@@ -141,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
                             txtRecommendCafeName.setText("나만의 카페를 찾아보세요!");
                             txtRecommendCafeDesc.setText("오른쪽 상단 메뉴에서 취향 설문을 시작해주세요.");
                         } else {
-                            fetchCafesAndRecommend();
+                            requestCurrentLocation();
                         }
                     } else {
                         Log.e("MainActivity", "서버 프로필 로드 실패", task.getException());
@@ -161,7 +182,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void fetchCafesAndRecommend() {
+    private void fetchCafesAndRecommendAfterLocation() {
+        requestCurrentLocation();
         db.collection("cafes")
                 .get()
                 .addOnCompleteListener(task -> {
@@ -199,7 +221,12 @@ public class MainActivity extends AppCompatActivity {
                         }
 
                         List<Recommender.Recommendation> results =
-                                Recommender.recommend(cafeModels, selectedTags);
+                                Recommender.recommend(
+                                        cafeModels,
+                                        selectedTags,
+                                        currentLat,
+                                        currentLng
+                                );
 
                         RecommendCafeActivity.recommendationList = results;
 
@@ -218,6 +245,58 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this, "DB 연결 에러", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void requestCurrentLocation() {
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    LOCATION_PERMISSION_REQUEST
+            );
+            return;
+        }
+
+        fusedLocationClient.getCurrentLocation(
+                com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
+                null
+        ).addOnSuccessListener(location -> {
+
+            if (location != null) {
+                currentLat = location.getLatitude();
+                currentLng = location.getLongitude();
+
+                Log.d("GPS_CHECK", "GPS: " + currentLat + ", " + currentLng);
+            } else {
+                Log.d("GPS_CHECK", "GPS 실패: 기본 위치 사용");
+            }
+            // 위치를 받은 다음에 추천 다시 계산
+            fetchCafesAndRecommendAfterLocation();
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode,
+            @NonNull String[] permissions,
+            @NonNull int[] grantResults
+    ) {
+        super.onRequestPermissionsResult(
+                requestCode,
+                permissions,
+                grantResults
+        );
+
+        if (requestCode == LOCATION_PERMISSION_REQUEST) {
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                requestCurrentLocation();
+            }
+        }
     }
 
     private void setupClickListeners() {

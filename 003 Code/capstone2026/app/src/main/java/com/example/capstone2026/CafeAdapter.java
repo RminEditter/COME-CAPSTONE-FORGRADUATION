@@ -56,7 +56,13 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         holder.tvName.setText(result.cafe.name);
         holder.tvReason.setText(result.reason);
         holder.tvMatch.setText("추천 점수: " + result.score + "점");
-        holder.tvDistance.setText("약 500m");
+        if (result.distanceMeters >= 1000) {
+            holder.tvDistance.setText(
+                    String.format("약 %.1fkm", result.distanceMeters / 1000.0)
+            );
+        } else {
+            holder.tvDistance.setText("약 " + (int) result.distanceMeters + "m");
+        }
 
         CafeRatingStats stats = ratingStatsMap.get(result.cafe.name);
 
