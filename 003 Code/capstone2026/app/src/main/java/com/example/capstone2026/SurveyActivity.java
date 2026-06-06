@@ -135,6 +135,7 @@ public class SurveyActivity extends AppCompatActivity {
         surveyData.put("companion_tag", companionTag);
         surveyData.put("dessert_tag", dessertTag);
         surveyData.put("specialty_tag", specialtyTag);
+        surveyData.put("email", user.getEmail());
 
         FirebaseFirestore.getInstance()
                 .collection("users")

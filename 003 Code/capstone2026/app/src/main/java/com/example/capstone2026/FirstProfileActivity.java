@@ -118,6 +118,7 @@ public class FirstProfileActivity extends AppCompatActivity {
             userProfileData.put("nickname", nickname);
             userProfileData.put("gender", gender);
             userProfileData.put("age", age);
+            userProfileData.put("email", currentUser.getEmail());
 
             btnNext.setEnabled(false); // 중복 클릭 차단
 

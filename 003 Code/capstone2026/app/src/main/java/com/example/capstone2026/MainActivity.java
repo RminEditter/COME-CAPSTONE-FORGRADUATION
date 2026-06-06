@@ -9,7 +9,6 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
@@ -24,7 +23,6 @@ import java.util.List;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.location.Location;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -46,9 +44,9 @@ public class MainActivity extends AppCompatActivity {
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
     private FusedLocationProviderClient fusedLocationClient;
 
-    // 현재 사용자 위치 저장용 변수
-    private double currentLat = 36.3622;   // 위치 못 가져오면 임시로 유성구청 기준
+    private double currentLat = 36.3622;   // 기본값: 유성구청 기준
     private double currentLng = 127.3568;
+    private boolean isFetching = false;    // 중복 실행 차단 플래그
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +54,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
 
@@ -64,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         setupClickListeners();
         BottomNavHelper.setup(this);
 
-        // 💡 필요시 전체 카페 네이버 리뷰 분석 및 태그 강제 업데이트를 실행하려면 주석을 해제하세요.
+        // 💡 [원하는 시점에 실행]: 주석(//)을 지우면 앱이 켜질 때 전체 카페 태그 업데이트가 시작됩니다!
         // updateAllCafeTags();
     }
 
@@ -97,9 +94,12 @@ public class MainActivity extends AppCompatActivity {
         txtRecentCafe.setText(recentPrefs.getString("recentCafe", "최근 본 카페가 없습니다."));
     }
 
+    /**
+     *  절대 지우지 말것 updateAllCafeTags삭제하지말것 절대 지우지말것
+     */
     private void updateAllCafeTags() {
         db.collection("cafes").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
+            if (task.isSuccessful() && task.getResult() != null) {
                 List<QueryDocumentSnapshot> docs = new ArrayList<>();
 
                 for (QueryDocumentSnapshot d : task.getResult()) {
@@ -109,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
                 for (int i = 0; i < docs.size(); i++) {
                     final int index = i;
 
+                    // 과부하 방지를 위해 0.5초 간격으로 한 개씩 순차 처리
                     new android.os.Handler().postDelayed(() -> {
                         QueryDocumentSnapshot document = docs.get(index);
                         String name = document.getString("name");
@@ -123,13 +124,15 @@ public class MainActivity extends AppCompatActivity {
 
                             db.collection("cafes")
                                     .document(document.getId())
-                                    .update("tags", tagStrings);
-
-                            Log.e("CafeFit", "성공: " + name);
+                                    .update("tags", tagStrings)
+                                    .addOnSuccessListener(aVoid -> Log.d("CafeFit", "태그 업데이트 성공: " + name))
+                                    .addOnFailureListener(e -> Log.e("CafeFit", "태그 업데이트 실패: " + name, e));
                         });
 
                     }, i * 500);
                 }
+            } else {
+                Log.e("CafeFit", "카페 목록 가져오기 실패", task.getException());
             }
         });
     }
@@ -143,25 +146,19 @@ public class MainActivity extends AppCompatActivity {
                         selectedTags.clear();
 
                         if (document.exists()) {
-                            String bean = document.getString("bean_tag");
-                            String style = document.getString("style_tag");
-                            String size = document.getString("size_tag");
-                            String companion = document.getString("companion_tag");
-                            String dessert = document.getString("dessert_tag");
-                            String specialty = document.getString("specialty_tag");
-
-                            addTagToList(bean);
-                            addTagToList(style);
-                            addTagToList(size);
-                            addTagToList(companion);
-                            addTagToList(dessert);
-                            addTagToList(specialty);
+                            addTagToList(document.getString("bean_tag"));
+                            addTagToList(document.getString("style_tag"));
+                            addTagToList(document.getString("size_tag"));
+                            addTagToList(document.getString("companion_tag"));
+                            addTagToList(document.getString("dessert_tag"));
+                            addTagToList(document.getString("specialty_tag"));
                         }
 
                         if (selectedTags.isEmpty()) {
                             txtRecommendCafeName.setText("나만의 카페를 찾아보세요!");
                             txtRecommendCafeDesc.setText("오른쪽 상단 메뉴에서 취향 설문을 시작해주세요.");
                         } else {
+                            // 💡 위치를 요청하고, 성공 시 추천을 돌리는 안전한 단방향 구조
                             requestCurrentLocation();
                         }
                     } else {
@@ -182,11 +179,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void fetchCafesAndRecommendAfterLocation() {
-        requestCurrentLocation();
+    private void fetchCafesAndRecommend() {
+        if (isFetching) return; // 무한 루프 렉 원천 차단
+        isFetching = true;
+
         db.collection("cafes")
                 .get()
                 .addOnCompleteListener(task -> {
+                    isFetching = false;
                     if (task.isSuccessful() && task.getResult() != null) {
                         List<Recommender.CafeModel> cafeModels = new ArrayList<>();
 
@@ -195,31 +195,26 @@ public class MainActivity extends AppCompatActivity {
                             dbCafe.setId(document.getId());
 
                             List<Tag> enumTags = new ArrayList<>();
-
                             if (dbCafe.getTags() != null) {
                                 for (String tagStr : dbCafe.getTags()) {
                                     try {
                                         enumTags.add(Tag.valueOf(tagStr));
-                                    } catch (IllegalArgumentException e) {
-                                        // 변환 실패한 태그는 무시
-                                    }
+                                    } catch (IllegalArgumentException ignored) {}
                                 }
                             }
-
-                            Tag[] tagArray = enumTags.toArray(new Tag[0]);
 
                             Recommender.CafeModel model = new Recommender.CafeModel(
                                     dbCafe.getId(),
                                     dbCafe.getName(),
                                     dbCafe.getAddress(),
-                                    tagArray,
+                                    enumTags.toArray(new Tag[0]),
                                     dbCafe.getLatitude(),
                                     dbCafe.getLongitude()
                             );
-
                             cafeModels.add(model);
                         }
 
+                        // 추천 알고리즘 1회 연산
                         List<Recommender.Recommendation> results =
                                 Recommender.recommend(
                                         cafeModels,
@@ -232,7 +227,6 @@ public class MainActivity extends AppCompatActivity {
 
                         if (!results.isEmpty() && results.get(0).score > 0) {
                             Recommender.Recommendation bestMatch = results.get(0);
-
                             txtRecommendCafeName.setText(bestMatch.cafe.name + " ✨");
                             txtRecommendCafeDesc.setText(bestMatch.cafe.address + "\n" + bestMatch.reason);
                         } else {
@@ -248,9 +242,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestCurrentLocation() {
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
             ActivityCompat.requestPermissions(
@@ -265,17 +257,17 @@ public class MainActivity extends AppCompatActivity {
                 com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
                 null
         ).addOnSuccessListener(location -> {
-
             if (location != null) {
                 currentLat = location.getLatitude();
                 currentLng = location.getLongitude();
-
-                Log.d("GPS_CHECK", "GPS: " + currentLat + ", " + currentLng);
+                Log.d("GPS_CHECK", "GPS 획득 성공: " + currentLat + ", " + currentLng);
             } else {
                 Log.d("GPS_CHECK", "GPS 실패: 기본 위치 사용");
             }
-            // 위치를 받은 다음에 추천 다시 계산
-            fetchCafesAndRecommendAfterLocation();
+            // 💡 무한 재귀호출을 유발하던 구조를 끊고 순수하게 추천 연산만 수행
+            fetchCafesAndRecommend();
+        }).addOnFailureListener(e -> {
+            fetchCafesAndRecommend();
         });
     }
 
@@ -285,16 +277,12 @@ public class MainActivity extends AppCompatActivity {
             @NonNull String[] permissions,
             @NonNull int[] grantResults
     ) {
-        super.onRequestPermissionsResult(
-                requestCode,
-                permissions,
-                grantResults
-        );
-
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST) {
-            if (grantResults.length > 0
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 requestCurrentLocation();
+            } else {
+                fetchCafesAndRecommend();
             }
         }
     }
@@ -321,38 +309,31 @@ public class MainActivity extends AppCompatActivity {
 
         btnHomeMenu.setOnClickListener(v -> {
             PopupMenu popupMenu = new PopupMenu(MainActivity.this, btnHomeMenu);
-
             popupMenu.getMenu().add("취향 설문 다시 하기");
             popupMenu.getMenu().add("방문 기록 보기");
             popupMenu.getMenu().add("즐겨찾기 목록");
 
             popupMenu.setOnMenuItemClickListener(item -> {
                 String title = item.getTitle().toString();
-
                 if (title.equals("취향 설문 다시 하기")) {
                     startActivity(new Intent(MainActivity.this, SurveyActivity.class));
                     return true;
                 }
-
                 if (title.equals("방문 기록 보기")) {
                     startActivity(new Intent(MainActivity.this, VisitHistoryActivity.class));
                     return true;
                 }
-
                 if (title.equals("즐겨찾기 목록")) {
                     startActivity(new Intent(MainActivity.this, FavoriteActivity.class));
                     return true;
                 }
-
                 return false;
             });
-
             popupMenu.show();
         });
 
         editSearch.setOnEditorActionListener((v, actionId, event) -> {
             String query = editSearch.getText().toString().trim();
-
             if (!query.isEmpty()) {
                 Intent intent = new Intent(MainActivity.this, RecommendCafeActivity.class);
                 intent.putExtra("SEARCH_QUERY", query);
