@@ -34,7 +34,7 @@
             android:layout_height="55dp"
             android:layout_marginTop="50dp"
             android:backgroundTint="@color/brown_light"
-            android:hint="ID"
+            android:hint="ID (Email)"
             android:inputType="textEmailAddress"
             android:padding="14dp"
             android:textColor="@color/text_dark"
@@ -52,11 +52,42 @@
             android:textColor="@color/text_dark"
             android:textColorHint="@color/brown_light" />
 
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
+
+            <CheckBox
+                android:id="@+id/cbAutoLogin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:text="자동 로그인"
+                android:textColor="@color/text_dark"
+                android:buttonTint="@color/brown_dark"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvFindAccount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="비밀번호 찾기"
+                android:textColor="@color/brown_dark"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:padding="8dp"/>
+        </RelativeLayout>
+
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnLogin"
             android:layout_width="match_parent"
             android:layout_height="55dp"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="16dp"
             android:background="@drawable/rounded_brown_button"
             android:text="Login"
             android:textAllCaps="false"

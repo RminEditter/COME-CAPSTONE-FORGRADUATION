@@ -49,6 +49,13 @@ public class VisitRecordActivity extends AppCompatActivity {
         mode = getIntent().getStringExtra("mode");
         cafeName = getIntent().getStringExtra("cafeName");
 
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("CLICKED_CAFE_NAME")) {
+            String filterCafeName = intent.getStringExtra("CLICKED_CAFE_NAME");
+
+            Toast.makeText(this, filterCafeName + " 기록을 불러옵니다!", Toast.LENGTH_SHORT).show();
+        }
+
         if (cafeName != null) {
             tvCafeName.setText(cafeName);
         }

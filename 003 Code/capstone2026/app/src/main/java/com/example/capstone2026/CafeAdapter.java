@@ -1,5 +1,6 @@
 package com.example.capstone2026;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.LayoutInflater;
@@ -67,10 +68,11 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         CafeRatingStats stats = ratingStatsMap.get(result.cafe.name);
 
         if (stats != null) {
-            holder.tvMyRating.setText("내 별점: ★ " + stats.avgRating);
+            // 💡 [2번 기준 텍스트 매칭] 평균값 기준이므로 '내 평점'으로 유지하되 가시성을 높였습니다.
+            holder.tvMyRating.setText("평점: ★ " + stats.avgRating);
             holder.tvVisitRecord.setText("방문 기록 " + stats.visitCount + "회");
         } else {
-            holder.tvMyRating.setText("내 별점 없음");
+            holder.tvMyRating.setText("내 평점 없음");
             holder.tvVisitRecord.setText("방문 기록 없음");
         }
 
@@ -119,11 +121,18 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
             v.getContext().startActivity(intent);
         });
 
-        // 카드 클릭 시 상세페이지 이동
+        // 💡 카드 클릭 시 사용자가 선택한 카페 이름을 '최근 본 카페'로 실시간 영구 저장!
         holder.itemView.setOnClickListener(v -> {
+            Context context = v.getContext();
 
-            Intent intent =
-                    new Intent(v.getContext(), CafeDetailActivity.class);
+            if (result.cafe != null && result.cafe.name != null) {
+                context.getSharedPreferences("CafeFitRecent", Context.MODE_PRIVATE)
+                        .edit()
+                        .putString("recentCafe", result.cafe.name)
+                        .apply();
+            }
+
+            Intent intent = new Intent(context, CafeDetailActivity.class);
 
             intent.putExtra("cafe_id", result.cafe.id);
             intent.putExtra("cafe_name", result.cafe.name);
@@ -131,7 +140,7 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
             intent.putExtra("cafe_reason", result.reason);
             intent.putExtra("cafe_tags", tagText.toString());
 
-            v.getContext().startActivity(intent);
+            context.startActivity(intent);
         });
     }
 
