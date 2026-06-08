@@ -11,18 +11,16 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <TextView
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnBack"
-            android:layout_width="56dp"
-            android:layout_height="48dp"
+            android:layout_width="72dp"
+            android:layout_height="42dp"
             android:background="@drawable/bg_back_button"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
             android:text="←"
             android:textColor="#4A2C1A"
             android:textSize="22sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textAllCaps="false" />
 
         <TextView
             android:layout_width="match_parent"
@@ -72,9 +70,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:numStars="5"
-                android:progressTint="@color/brown_dark"
                 android:rating="3"
-                android:secondaryProgressTint="#C7B8A8"
                 android:stepSize="0.5" />
 
             <TextView
@@ -100,15 +96,14 @@
                 android:textColorHint="#A89788"
                 android:textSize="14sp" />
 
-            <androidx.appcompat.widget.AppCompatButton
+            <Button
                 android:id="@+id/btnSaveVisit"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:layout_marginTop="24dp"
-                android:background="@drawable/rounded_brown_button"
+                android:backgroundTint="@color/brown_dark"
                 android:text="방문 기록 저장"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
+                android:textColor="@android:color/white"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
