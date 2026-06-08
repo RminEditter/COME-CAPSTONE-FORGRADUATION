@@ -2,6 +2,7 @@
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/ivory_bg"
     android:padding="24dp">
 
     <LinearLayout
@@ -14,6 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="카페 이름"
+            android:textColor="@color/brown_dark"
             android:textSize="26sp"
             android:textStyle="bold"
             android:layout_marginBottom="12dp" />
@@ -23,6 +25,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="주소"
+            android:textColor="@color/text_dark"
             android:textSize="16sp"
             android:layout_marginBottom="16dp" />
 
@@ -31,7 +34,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="태그"
+            android:textColor="@color/brown_dark"
             android:textSize="15sp"
+            android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
         <TextView
@@ -39,28 +44,38 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="추천 이유"
+            android:textColor="@color/text_dark"
             android:textSize="16sp"
             android:layout_marginBottom="24dp" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnFavorite"
             android:layout_width="match_parent"
             android:layout_height="56dp"
+            android:background="@drawable/rounded_brown_button"
             android:text="♡ 즐겨찾기 추가"
-            android:textSize="18sp" />
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnAddVisitRecord"
             android:layout_width="match_parent"
             android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/rounded_brown_button"
             android:text="방문 기록 작성"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
             android:textSize="18sp"
-            android:layout_marginTop="12dp" />
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="다른 이용객들의 기록"
+            android:textColor="@color/brown_dark"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginTop="32dp"
