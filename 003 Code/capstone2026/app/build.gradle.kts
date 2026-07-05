@@ -52,5 +52,7 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     annotationProcessor("androidx.room:room-compiler:2.6.1")
     implementation("com.google.firebase:firebase-auth")
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
+    implementation("androidx.cardview:cardview:1.0.0")
 
 }
