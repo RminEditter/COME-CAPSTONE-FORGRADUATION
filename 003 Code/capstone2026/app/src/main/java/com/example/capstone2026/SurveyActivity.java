@@ -3,6 +3,7 @@ package com.example.capstone2026;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,8 +21,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class SurveyActivity extends AppCompatActivity {
@@ -191,19 +199,25 @@ public class SurveyActivity extends AppCompatActivity {
         for (int i = 0; i < questions.size(); i++) {
             Question question = questions.get(i);
 
-            if (i == 6) {
+            if (i == 6) { // 7번째 질문: 가장 중요한 가중치 태그
                 priorityTag = question.getSelectedTag();
             } else {
                 selectedTags.addAll(question.getSelectedTags());
             }
         }
 
-        saveSurvey(selectedTags, priorityTag);
+        // 💡 1. 로컬 SharedPreferences 저장 (빠른 화면 전환 및 전달용)
+        saveSurveyToLocal(selectedTags, priorityTag);
 
+        // 💡 2. 파이어베이스 Firestore DB 원상복구 적재 (계정별 데이터 보존용)
+        saveSurveyToFirestore(selectedTags, priorityTag);
+
+        // 💡 3. 추천 액티비티로 이동
         Intent intent = new Intent(SurveyActivity.this, RecommendCafeActivity.class);
         intent.putStringArrayListExtra("user_tags", selectedTags);
         intent.putExtra("priority_tag", priorityTag);
         startActivity(intent);
+        finish(); // 설문 완료 후 뒤로가기로 돌아오지 못하게 finish 처리
     }
 
     private void saveSurvey(ArrayList<String> tags, String priority) {
@@ -374,6 +388,36 @@ public class SurveyActivity extends AppCompatActivity {
                 txtSubQuestion = itemView.findViewById(R.id.txtSubQuestion);
                 layoutOptions = itemView.findViewById(R.id.layoutOptions);
             }
+        }
+    }
+    private void saveSurveyToLocal(ArrayList<String> tags, String priority) {
+        Set<String> tagSet = new HashSet<>(tags);
+
+        SharedPreferences prefs = getSharedPreferences("survey", MODE_PRIVATE);
+        prefs.edit()
+                .putStringSet("user_tags", tagSet)
+                .putString("priority_tag", priority)
+                .apply();
+    }
+    private void saveSurveyToFirestore(ArrayList<String> tags, String priority) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        // 로그인된 유저가 존재할 때만 Firestore에 저장
+        if (currentUser != null) {
+            String uid = currentUser.getUid();
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+            Map<String, Object> surveyData = new HashMap<>();
+            surveyData.put("user_tags", tags);
+            surveyData.put("priority_tag", priority);
+
+            // users 컬렉션의 내 uid 문서에 태그 업데이트 (SetOptions.merge()로 기존 유저 정보 유지)
+            db.collection("users").document(uid)
+                    .set(surveyData, SetOptions.merge())
+                    .addOnSuccessListener(aVoid -> Log.d("SURVEY_DB", "Firestore 설문 저장 성공"))
+                    .addOnFailureListener(e -> Log.e("SURVEY_DB", "Firestore 설문 저장 실패", e));
+        } else {
+            Log.w("SURVEY_DB", "로그인된 유저가 없어 Firestore에 저장하지 못했습니다.");
         }
     }
 }

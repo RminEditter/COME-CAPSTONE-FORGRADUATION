@@ -20,10 +20,14 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -64,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         setupClickListeners();
         BottomNavHelper.setup(this);
+        //cleanupFranchiseDataAllInOne(); 프렌차이즈 지우기
+        //updateAllCafeTags(); 태그부여 함수 건들지말것.
     }
 
     @Override
@@ -115,41 +121,76 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void updateAllCafeTags() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
         db.collection("cafes").get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 List<QueryDocumentSnapshot> docs = new ArrayList<>();
-
                 for (QueryDocumentSnapshot d : task.getResult()) {
                     docs.add(d);
                 }
 
+                ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
                 for (int i = 0; i < docs.size(); i++) {
                     final int index = i;
+                    final QueryDocumentSnapshot document = docs.get(index);
+                    String name = document.getString("name");
+                    String addr = document.getString("address");
 
-                    new android.os.Handler().postDelayed(() -> {
-                        QueryDocumentSnapshot document = docs.get(index);
-                        String name = document.getString("name");
-                        String addr = document.getString("address");
+                    // 💡 프랜차이즈 매장은 스킵하여 네트워크 요청 절약
+                    if (isFranchise(name)) {
+                        Log.d("CafeFit", "프랜차이즈 스킵: " + name);
+                        continue;
+                    }
+
+                    // 💡 500ms 간격으로 백그라운드 스레드에서 순차 실행
+                    executor.schedule(() -> {
+                        if (name == null) return;
 
                         NaverReviewAnalyzer.analyzeCafe(name, addr, tags -> {
-                            List<String> tagStrings = new ArrayList<>();
+                            // 💡 태그가 정상적으로 수집된 경우에만 DB 갱신 (데이터 소실 방지)
+                            if (tags != null && !tags.isEmpty()) {
 
-                            for (Tag t : tags) {
-                                tagStrings.add(t.name());
+                                List<String> tagStrings = new ArrayList<>();
+                                for (Tag t : tags) {
+                                    tagStrings.add(t.name());
+                                }
+
+                                Map<String, Object> updateData = new HashMap<>();
+                                updateData.put("tags", tagStrings);
+
+                                db.collection("cafes")
+                                        .document(document.getId())
+                                        .update(updateData)
+                                        .addOnSuccessListener(aVoid -> Log.d("CafeFit", "성공: " + name + " -> 태그 " + tagStrings.size() + "개"))
+                                        .addOnFailureListener(e -> Log.e("CafeFit", "DB 업데이트 실패: " + name, e));
+                            } else {
+                                Log.w("CafeFit", "태그 수집 실패 또는 데이터 없음: " + name);
                             }
-
-                            db.collection("cafes")
-                                    .document(document.getId())
-                                    .update("tags", tagStrings);
-
-                            Log.e("CafeFit", "성공: " + name);
                         });
 
-                    }, i * 500);
+                    }, i * 500, TimeUnit.MILLISECONDS);
                 }
+
+                // 스케줄러 종료 예약
+                executor.shutdown();
+            } else {
+                Log.e("CafeFit", "카페 목록 불러오기 실패", task.getException());
             }
         });
     }
+
+    // 프랜차이즈 필터링 보조 메서드
+    private boolean isFranchise(String cafeName) {
+        if (cafeName == null) return false;
+        String[] franchises = {"스타벅스", "투썸", "메가", "컴포즈", "빽다방", "할리스", "이디야", "공차", "파스쿠찌"};
+        for (String f : franchises) {
+            if (cafeName.contains(f)) return true;
+        }
+        return false;
+    }
+
 
     private void fetchAllUsersHighestRatedCafes() {
         if (txtTopCafe1 == null || txtTopCafe2 == null || txtTopCafe3 == null) return;
@@ -463,5 +504,53 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+    }
+    private void cleanupFranchiseDataAllInOne() {
+        // 1. 지우고자 하는 프랜차이즈 대표 키워드 리스트
+        List<String> franchiseNames = Arrays.asList(
+                "스타벅스", "투썸", "메가", "컴포즈", "빽다방",
+                "할리스", "이디야", "파스쿠찌", "엔제리너스",
+                "탐앤탐스", "공차", "더리터", "드롭탑", "매머드", "디저트39"
+        );
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // 2. 프랜차이즈 관련 데이터가 남아있을 수 있는 대상 컬렉션 목록
+        // (※ 프로젝트의 실제 컬렉션 이름에 맞게 수정/추가하시면 됩니다)
+        String[] targetCollections = {"visit_records", "reviews", "favorites", "history"};
+
+        for (String collectionName : targetCollections) {
+            db.collection(collectionName).get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    int deletedCount = 0;
+
+                    for (QueryDocumentSnapshot document : task.getResult()) {
+                        // 카페 이름 필드 체크 (cafeName 또는 name 으로 들어있는 경우가 많음)
+                        String cafeName = document.getString("cafeName");
+                        if (cafeName == null) {
+                            cafeName = document.getString("name");
+                        }
+
+                        if (cafeName != null) {
+                            for (String franchise : franchiseNames) {
+                                if (cafeName.contains(franchise)) {
+                                    // 해당 프랜차이즈 잔해 문서 삭제
+                                    db.collection(collectionName).document(document.getId()).delete();
+                                    Log.d("CLEANUP_ALL", "[" + collectionName + "] 컬렉션에서 잔해 삭제: " + cafeName);
+                                    deletedCount++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (deletedCount > 0) {
+                        Toast.makeText(MainActivity.this,
+                                collectionName + "에서 프랜차이즈 잔해 " + deletedCount + "건 삭제 완료!",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
     }
 }
