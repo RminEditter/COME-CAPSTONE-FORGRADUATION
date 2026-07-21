@@ -131,27 +131,36 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+                int scheduledDelayIndex = 0; // 스킵되지 않고 실제 크롤링할 카페들의 딜레이 인덱스
 
                 for (int i = 0; i < docs.size(); i++) {
-                    final int index = i;
-                    final QueryDocumentSnapshot document = docs.get(index);
+                    final QueryDocumentSnapshot document = docs.get(i);
                     String name = document.getString("name");
                     String addr = document.getString("address");
 
-                    // 💡 프랜차이즈 매장은 스킵하여 네트워크 요청 절약
+                    // 1. 프랜차이즈 스킵
                     if (isFranchise(name)) {
                         Log.d("CafeFit", "프랜차이즈 스킵: " + name);
                         continue;
                     }
 
-                    // 💡 500ms 간격으로 백그라운드 스레드에서 순차 실행
+                    // 💡 2. [핵심] 이미 태그 작업이 끝난 카페인지 검사 (이어서 하기 로직)
+                    List<String> existingTags = (List<String>) document.get("tags");
+                    if (existingTags != null && !existingTags.isEmpty()) {
+                        Log.d("CafeFit", "⏩ 이미 태그가 존재하는 카페 (스킵): " + name);
+                        continue; // 이미 태그가 있으므로 크롤링하지 않고 넘어감!
+                    }
+
+                    // 3. 아직 태그가 없는 카페만 스케줄러에 등록하여 1초 간격 처리
+                    final int delayMultiplier = scheduledDelayIndex++;
+
                     executor.schedule(() -> {
                         if (name == null) return;
 
-                        NaverReviewAnalyzer.analyzeCafe(name, addr, tags -> {
-                            // 💡 태그가 정상적으로 수집된 경우에만 DB 갱신 (데이터 소실 방지)
-                            if (tags != null && !tags.isEmpty()) {
+                        Log.d("CafeFit", "🔄 태그 작업 시작: " + name);
 
+                        NaverReviewAnalyzer.analyzeCafe(name, addr, tags -> {
+                            if (tags != null && !tags.isEmpty()) {
                                 List<String> tagStrings = new ArrayList<>();
                                 for (Tag t : tags) {
                                     tagStrings.add(t.name());
@@ -163,17 +172,16 @@ public class MainActivity extends AppCompatActivity {
                                 db.collection("cafes")
                                         .document(document.getId())
                                         .update(updateData)
-                                        .addOnSuccessListener(aVoid -> Log.d("CafeFit", "성공: " + name + " -> 태그 " + tagStrings.size() + "개"))
-                                        .addOnFailureListener(e -> Log.e("CafeFit", "DB 업데이트 실패: " + name, e));
+                                        .addOnSuccessListener(aVoid -> Log.d("CafeFit", "✅ 성공: " + name + " -> 태그 " + tagStrings.size() + "개"))
+                                        .addOnFailureListener(e -> Log.e("CafeFit", "❌ DB 업데이트 실패: " + name, e));
                             } else {
-                                Log.w("CafeFit", "태그 수집 실패 또는 데이터 없음: " + name);
+                                Log.w("CafeFit", "⚠️ 태그 수집 실패 또는 데이터 없음: " + name);
                             }
                         });
 
-                    }, i * 500, TimeUnit.MILLISECONDS);
+                    }, delayMultiplier * 1000L, TimeUnit.MILLISECONDS);
                 }
 
-                // 스케줄러 종료 예약
                 executor.shutdown();
             } else {
                 Log.e("CafeFit", "카페 목록 불러오기 실패", task.getException());
