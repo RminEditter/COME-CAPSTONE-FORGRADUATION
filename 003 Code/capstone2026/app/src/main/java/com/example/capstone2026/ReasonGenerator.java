@@ -1,40 +1,84 @@
 package com.example.capstone2026;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class ReasonGenerator {
 
-    public static String buildReason(Tag[] matchedTags, double distanceMeters, int priceLevel) {
-        List<String> parts = new ArrayList<>();
+    public static String buildReason(
+            Tag[] matchedTags,
+            double distanceMeters,
+            Tag priorityTag
+    ) {
+        StringBuilder reason = new StringBuilder();
 
-        // 매칭 태그 상위 2개 (에러 수정 부분)
+        reason.append("추천 이유\n");
+
+        // 1. 일치한 태그 표시
         if (matchedTags != null && matchedTags.length > 0) {
-            int limit = Math.min(2, matchedTags.length);
+
+            int limit = Math.min(3, matchedTags.length);
+
             for (int i = 0; i < limit; i++) {
-                // [수정] labelKo() -> getKoreanLabel() 로 변경
-                parts.add(matchedTags[i].getKoreanLabel());
+                Tag tag = matchedTags[i];
+
+                if (tag == null) {
+                    continue;
+                }
+
+                reason.append("✓ ")
+                        .append(tag.getKoreanLabel())
+                        .append(" 취향과 일치해요");
+
+                // 중요 조건에 해당하는 태그 표시
+                if (isPriorityMatched(tag, priorityTag)) {
+                    reason.append(" · 중요 조건");
+                }
+
+                reason.append("\n");
             }
+        } else {
+            reason.append("✓ 현재 위치와 카페 정보를 바탕으로 추천했어요\n");
         }
 
-        // 거리 정보 (교수님이 좋아하실만한 세밀한 텍스트)
-        if (distanceMeters <= 300) parts.add("도보 5분 이내");
-        else if (distanceMeters <= 700) parts.add("가까운 거리");
+        // 2. 거리 정보 표시
+        reason.append("✓ 현재 위치에서 ");
 
-        // 가격대 정보
-        if (priceLevel <= 2) parts.add("가성비 좋음");
-        else if (priceLevel >= 4) parts.add("프리미엄 카페");
-
-        if (parts.isEmpty()) return "취향 기반으로 추천했어요";
-
-        // Java 8 이상에서는 String.join을 사용하고,
-        // 하위 버전 호환을 위해 안드로이드에서 안전하게 처리합니다.
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < parts.size(); i++) {
-            result.append(parts.get(i));
-            if (i < parts.size() - 1) result.append(" · ");
+        if (distanceMeters < 1000) {
+            reason.append("약 ")
+                    .append((int) distanceMeters)
+                    .append("m 떨어져 있어요");
+        } else {
+            reason.append("약 ")
+                    .append(String.format("%.1f", distanceMeters / 1000.0))
+                    .append("km 떨어져 있어요");
         }
 
-        return result.toString() + " 포인트가 있어요";
+        // 3. 거리 우선 조건 표시
+        if (priorityTag == Tag.DISTANCE) {
+            reason.append("\n✓ 가까운 거리를 중요하게 반영했어요");
+        }
+
+        return reason.toString();
+    }
+
+    private static boolean isPriorityMatched(Tag matchedTag, Tag priorityTag) {
+
+        if (matchedTag == null || priorityTag == null) {
+            return false;
+        }
+
+        // 직접 선택한 중요 태그
+        if (matchedTag == priorityTag) {
+            return true;
+        }
+
+        // 분위기 우선 선택 시 분위기 관련 태그
+        if (priorityTag == Tag.MOOD) {
+            return matchedTag == Tag.INTERIOR_PRETTY
+                    || matchedTag == Tag.HIP
+                    || matchedTag == Tag.WORK_FRIENDLY
+                    || matchedTag == Tag.SMALL_CAFE
+                    || matchedTag == Tag.LARGE_CAFE;
+        }
+
+        return false;
     }
 }

@@ -116,16 +116,8 @@ public class Recommender {
             String reason = ReasonGenerator.buildReason(
                     matched.toArray(new Tag[0]),
                     distanceMeters,
-                    2
+                    priorityTag
             );
-
-            if (priorityTag != null) {
-                if (priorityTag == Tag.DISTANCE) {
-                    reason += " 거리 우선 조건을 반영했어요.";
-                } else if (matched.contains(priorityTag)) {
-                    reason += " 중요하게 선택한 조건과도 잘 맞아요.";
-                }
-            }
 
             results.add(new Recommendation(
                     cafe,
