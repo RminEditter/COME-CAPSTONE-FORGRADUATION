@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         setupClickListeners();
         BottomNavHelper.setup(this);
-        //cleanupFranchiseDataAllInOne(); 프렌차이즈 지우기
+        //cleanupFranchiseDataAllInOne();
         //updateAllCafeTags(); 태그부여 함수 건들지말것.
     }
 
@@ -514,18 +514,22 @@ public class MainActivity extends AppCompatActivity {
         });
     }
     private void cleanupFranchiseDataAllInOne() {
-        // 1. 지우고자 하는 프랜차이즈 대표 키워드 리스트
+        // 1. 지우고자 하는 프랜차이즈 및 피자/패스트푸드 키워드 리스트
         List<String> franchiseNames = Arrays.asList(
+                // 기존 카페 프랜차이즈
                 "스타벅스", "투썸", "메가", "컴포즈", "빽다방",
                 "할리스", "이디야", "파스쿠찌", "엔제리너스",
-                "탐앤탐스", "공차", "더리터", "드롭탑", "매머드", "디저트39"
+                "탐앤탐스", "공차", "더리터", "드롭탑", "매머드", "디저트39",
+
+                // 🍕 피자 및 패스트푸드/음식점 키워드 추가
+                "피자", "도미노", "피자헛", "알볼로", "미스터피자", "피자스쿨", "59쌀피자",
+                "버거", "롯데리아", "맥도날드", "맘스터치", "KFC"
         );
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // 2. 프랜차이즈 관련 데이터가 남아있을 수 있는 대상 컬렉션 목록
-        // (※ 프로젝트의 실제 컬렉션 이름에 맞게 수정/추가하시면 됩니다)
-        String[] targetCollections = {"visit_records", "reviews", "favorites", "history"};
+        // 💡 메인 카페 목록 컬렉션("cafes")을 맨 앞에 추가해 두셔야 카페 DB에서도 삭제됩니다!
+        String[] targetCollections = {"cafes", "visit_records", "reviews", "favorites", "history"};
 
         for (String collectionName : targetCollections) {
             db.collection(collectionName).get().addOnCompleteListener(task -> {
@@ -533,7 +537,6 @@ public class MainActivity extends AppCompatActivity {
                     int deletedCount = 0;
 
                     for (QueryDocumentSnapshot document : task.getResult()) {
-                        // 카페 이름 필드 체크 (cafeName 또는 name 으로 들어있는 경우가 많음)
                         String cafeName = document.getString("cafeName");
                         if (cafeName == null) {
                             cafeName = document.getString("name");
@@ -542,9 +545,8 @@ public class MainActivity extends AppCompatActivity {
                         if (cafeName != null) {
                             for (String franchise : franchiseNames) {
                                 if (cafeName.contains(franchise)) {
-                                    // 해당 프랜차이즈 잔해 문서 삭제
                                     db.collection(collectionName).document(document.getId()).delete();
-                                    Log.d("CLEANUP_ALL", "[" + collectionName + "] 컬렉션에서 잔해 삭제: " + cafeName);
+                                    Log.d("CLEANUP_ALL", "[" + collectionName + "] 삭제됨: " + cafeName);
                                     deletedCount++;
                                     break;
                                 }
@@ -554,7 +556,7 @@ public class MainActivity extends AppCompatActivity {
 
                     if (deletedCount > 0) {
                         Toast.makeText(MainActivity.this,
-                                collectionName + "에서 프랜차이즈 잔해 " + deletedCount + "건 삭제 완료!",
+                                collectionName + "에서 " + deletedCount + "건 삭제 완료!",
                                 Toast.LENGTH_SHORT).show();
                     }
                 }
