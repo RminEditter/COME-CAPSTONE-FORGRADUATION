@@ -1,5 +1,6 @@
 package com.example.capstone2026;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Toast;
@@ -10,6 +11,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.ChipGroup;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -29,6 +32,12 @@ public class RecommendCafeActivity extends AppCompatActivity {
     //  화면에 표시할 카페 리스트 및 평점 통계 맵을 멤버 변수로 승격하여 정렬 시 참조
     private List<Recommender.Recommendation> displayList = new ArrayList<>();
     private Map<String, CafeRatingStats> ratingStatsMap = new HashMap<>();
+
+    // 개인화 추천용 태그 점수
+    private Map<Tag, Integer> personalizationTagScores = new HashMap<>();
+
+    private boolean feedbackLoaded = false;
+    private boolean ratingPreferenceLoaded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +88,9 @@ public class RecommendCafeActivity extends AppCompatActivity {
 
         // Firestore 평점 통계 데이터 로드
         loadRatingStats();
+
+        // 개인화 추천 데이터 로드
+        loadPersonalizationData();
     }
 
     private void setupBackButton() {
@@ -108,6 +120,9 @@ public class RecommendCafeActivity extends AppCompatActivity {
             } else if (checkedId == R.id.chipSortRating) {
                 // 3. 평점순 (방문 기록 기준 평균 평점 내림차순)
                 sortRecommendationsByRating();
+            } else if (checkedId == R.id.chipSortReviews) {
+                // 4. 리뷰 많은 순 (방문 기록 개수 내림차순)
+                sortRecommendationsByReviewCount();
             }
 
             // 목록 재정렬 반영
@@ -120,44 +135,135 @@ public class RecommendCafeActivity extends AppCompatActivity {
     // 1. 추천순 정렬
     private void sortRecommendationsByScore() {
         if (displayList == null || displayList.isEmpty()) return;
+
         Collections.sort(displayList, (a, b) -> {
             if (b.score != a.score) {
                 return Integer.compare(b.score, a.score); // 점수 높은 순
             }
-            return Double.compare(a.distanceMeters, b.distanceMeters); // 점수 같으면 가까운 순
+
+            return Double.compare(
+                    a.distanceMeters,
+                    b.distanceMeters
+            ); // 점수 같으면 가까운 순
         });
     }
 
     // 2. 거리순 정렬
     private void sortRecommendationsByDistance() {
         if (displayList == null || displayList.isEmpty()) return;
+
         Collections.sort(displayList, (a, b) ->
-                Double.compare(a.distanceMeters, b.distanceMeters) // 가까운 순
+                Double.compare(
+                        a.distanceMeters,
+                        b.distanceMeters
+                ) // 가까운 순
         );
     }
 
     // 3. 평점순 정렬 (visit_records 기반 실시간 평점 활용)
     private void sortRecommendationsByRating() {
         if (displayList == null || displayList.isEmpty()) return;
+
         Collections.sort(displayList, (a, b) -> {
             float ratingA = 0.0f;
             float ratingB = 0.0f;
 
             if (a.cafe != null && ratingStatsMap.containsKey(a.cafe.name)) {
                 CafeRatingStats statsA = ratingStatsMap.get(a.cafe.name);
-                if (statsA != null) ratingA = statsA.avgRating;
+
+                if (statsA != null) {
+                    ratingA = statsA.avgRating;
+                }
             }
 
             if (b.cafe != null && ratingStatsMap.containsKey(b.cafe.name)) {
                 CafeRatingStats statsB = ratingStatsMap.get(b.cafe.name);
-                if (statsB != null) ratingB = statsB.avgRating;
+
+                if (statsB != null) {
+                    ratingB = statsB.avgRating;
+                }
             }
 
             // 평점이 높은 순으로 정렬 (같으면 추천 점수 순)
             if (ratingB != ratingA) {
-                return Float.compare(ratingB, ratingA);
+                return Float.compare(
+                        ratingB,
+                        ratingA
+                );
             }
-            return Integer.compare(b.score, a.score);
+
+            return Integer.compare(
+                    b.score,
+                    a.score
+            );
+        });
+    }
+
+    // 4. 리뷰 많은 순 정렬 (visit_records의 카페별 리뷰 개수 기준)
+    private void sortRecommendationsByReviewCount() {
+        if (displayList == null || displayList.isEmpty()) return;
+
+        Collections.sort(displayList, (a, b) -> {
+
+            int reviewCountA = 0;
+            int reviewCountB = 0;
+
+            if (a.cafe != null && ratingStatsMap.containsKey(a.cafe.name)) {
+                CafeRatingStats statsA = ratingStatsMap.get(a.cafe.name);
+
+                if (statsA != null) {
+                    reviewCountA = statsA.visitCount;
+                }
+            }
+
+            if (b.cafe != null && ratingStatsMap.containsKey(b.cafe.name)) {
+                CafeRatingStats statsB = ratingStatsMap.get(b.cafe.name);
+
+                if (statsB != null) {
+                    reviewCountB = statsB.visitCount;
+                }
+            }
+
+            // 리뷰 수가 많은 순으로 정렬
+            if (reviewCountB != reviewCountA) {
+                return Integer.compare(
+                        reviewCountB,
+                        reviewCountA
+                );
+            }
+
+            // 리뷰 수가 같으면 평균 평점이 높은 순
+            float ratingA = 0.0f;
+            float ratingB = 0.0f;
+
+            if (a.cafe != null && ratingStatsMap.containsKey(a.cafe.name)) {
+                CafeRatingStats statsA = ratingStatsMap.get(a.cafe.name);
+
+                if (statsA != null) {
+                    ratingA = statsA.avgRating;
+                }
+            }
+
+            if (b.cafe != null && ratingStatsMap.containsKey(b.cafe.name)) {
+                CafeRatingStats statsB = ratingStatsMap.get(b.cafe.name);
+
+                if (statsB != null) {
+                    ratingB = statsB.avgRating;
+                }
+            }
+
+            if (ratingB != ratingA) {
+                return Float.compare(
+                        ratingB,
+                        ratingA
+                );
+            }
+
+            // 리뷰 수와 평점까지 같으면 추천 점수가 높은 순
+            return Integer.compare(
+                    b.score,
+                    a.score
+            );
         });
     }
 
@@ -201,5 +307,301 @@ public class RecommendCafeActivity extends AppCompatActivity {
                         Toast.makeText(this, "통계 데이터 로드 실패", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    // 개인화 추천 데이터 로드
+    private void loadPersonalizationData() {
+
+        personalizationTagScores.clear();
+
+        // 즐겨찾기 데이터는 로컬에서 바로 반영
+        applyFavoritePreferences();
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (currentUser == null) {
+            feedbackLoaded = true;
+            ratingPreferenceLoaded = true;
+            applyPersonalizationIfReady();
+            return;
+        }
+
+        String uid = currentUser.getUid();
+
+        loadRecommendationFeedback(uid);
+        loadMyRatingPreferences(uid);
+    }
+
+    // 즐겨찾기한 카페의 태그를 선호 태그로 반영
+    private void applyFavoritePreferences() {
+
+        SharedPreferences prefs = getSharedPreferences(
+                "CafeFitFavorites",
+                MODE_PRIVATE
+        );
+
+        if (recommendationList == null) {
+            return;
+        }
+
+        for (Recommender.Recommendation recommendation : recommendationList) {
+
+            if (recommendation == null ||
+                    recommendation.cafe == null ||
+                    recommendation.cafe.id == null) {
+                continue;
+            }
+
+            boolean isFavorite = prefs.getBoolean(
+                    recommendation.cafe.id,
+                    false
+            );
+
+            if (!isFavorite) {
+                continue;
+            }
+
+            addCafeTagsToPersonalizationScore(
+                    recommendation.cafe,
+                    1
+            );
+        }
+    }
+
+    // 추천 정확도 피드백 데이터를 불러와 개인화 점수에 반영
+    private void loadRecommendationFeedback(String uid) {
+
+        FirebaseFirestore.getInstance()
+                .collection("recommendation_feedback")
+                .whereEqualTo("userUid", uid)
+                .get()
+                .addOnCompleteListener(task -> {
+
+                    if (task.isSuccessful() && task.getResult() != null) {
+
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+
+                            String cafeId = document.getString("cafeId");
+                            String feedback = document.getString("feedback");
+
+                            if (cafeId == null || feedback == null) {
+                                continue;
+                            }
+
+                            Recommender.CafeModel cafe =
+                                    findCafeById(cafeId);
+
+                            if (cafe == null) {
+                                continue;
+                            }
+
+                            if ("LIKE".equals(feedback)) {
+
+                                addCafeTagsToPersonalizationScore(
+                                        cafe,
+                                        1
+                                );
+
+                            } else if ("DISLIKE".equals(feedback)) {
+
+                                addCafeTagsToPersonalizationScore(
+                                        cafe,
+                                        -1
+                                );
+                            }
+                        }
+                    }
+
+                    feedbackLoaded = true;
+                    applyPersonalizationIfReady();
+                });
+    }
+
+    // 현재 로그인 사용자의 과거 별점을 불러와 개인화 점수에 반영
+    private void loadMyRatingPreferences(String uid) {
+
+        FirebaseFirestore.getInstance()
+                .collection("visit_records")
+                .whereEqualTo("userUid", uid)
+                .get()
+                .addOnCompleteListener(task -> {
+
+                    if (task.isSuccessful() && task.getResult() != null) {
+
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+
+                            String cafeName = document.getString("cafeName");
+                            Double ratingDouble = document.getDouble("rating");
+
+                            if (cafeName == null || ratingDouble == null) {
+                                continue;
+                            }
+
+                            float rating = ratingDouble.floatValue();
+
+                            Recommender.CafeModel cafe =
+                                    findCafeByName(cafeName);
+
+                            if (cafe == null) {
+                                continue;
+                            }
+
+                            // 4점 이상은 사용자가 선호한 카페로 판단
+                            if (rating >= 4.0f) {
+
+                                addCafeTagsToPersonalizationScore(
+                                        cafe,
+                                        1
+                                );
+
+                                // 2점 이하는 사용자가 선호하지 않은 카페로 판단
+                            } else if (rating <= 2.0f) {
+
+                                addCafeTagsToPersonalizationScore(
+                                        cafe,
+                                        -1
+                                );
+                            }
+                        }
+                    }
+
+                    ratingPreferenceLoaded = true;
+                    applyPersonalizationIfReady();
+                });
+    }
+
+    // 카페가 가진 태그 전체에 개인화 선호 점수를 누적
+    private void addCafeTagsToPersonalizationScore(
+            Recommender.CafeModel cafe,
+            int value
+    ) {
+
+        if (cafe == null || cafe.tags == null) {
+            return;
+        }
+
+        for (Tag tag : cafe.tags) {
+
+            if (tag == null) {
+                continue;
+            }
+
+            int currentScore = 0;
+
+            if (personalizationTagScores.containsKey(tag)) {
+                Integer savedScore =
+                        personalizationTagScores.get(tag);
+
+                if (savedScore != null) {
+                    currentScore = savedScore;
+                }
+            }
+
+            personalizationTagScores.put(
+                    tag,
+                    currentScore + value
+            );
+        }
+    }
+
+    // 추천 피드백과 별점 데이터를 모두 읽은 뒤 실제 추천 점수에 반영
+    private void applyPersonalizationIfReady() {
+
+        if (!feedbackLoaded || !ratingPreferenceLoaded) {
+            return;
+        }
+
+        Recommender.applyFeedbackScores(
+                recommendationList,
+                personalizationTagScores
+        );
+
+        rebuildDisplayList();
+
+        sortRecommendationsByScore();
+
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    // 개인화 추천 점수 적용 후 검색 조건을 유지한 채 화면 목록 재생성
+    private void rebuildDisplayList() {
+
+        displayList.clear();
+
+        String searchQuery =
+                getIntent().getStringExtra("SEARCH_QUERY");
+
+        if (!TextUtils.isEmpty(searchQuery)) {
+
+            String finalQuery =
+                    searchQuery.toLowerCase().trim();
+
+            for (Recommender.Recommendation rec :
+                    recommendationList) {
+
+                if (rec.cafe != null &&
+                        rec.cafe.name != null &&
+                        rec.cafe.name
+                                .toLowerCase()
+                                .contains(finalQuery)) {
+
+                    displayList.add(rec);
+                }
+            }
+
+        } else {
+
+            displayList.addAll(recommendationList);
+        }
+    }
+
+    private Recommender.CafeModel findCafeById(String cafeId) {
+
+        if (recommendationList == null ||
+                cafeId == null) {
+            return null;
+        }
+
+        for (Recommender.Recommendation recommendation :
+                recommendationList) {
+
+            if (recommendation == null ||
+                    recommendation.cafe == null ||
+                    recommendation.cafe.id == null) {
+                continue;
+            }
+
+            if (cafeId.equals(recommendation.cafe.id)) {
+                return recommendation.cafe;
+            }
+        }
+
+        return null;
+    }
+
+    private Recommender.CafeModel findCafeByName(String cafeName) {
+
+        if (recommendationList == null ||
+                cafeName == null) {
+            return null;
+        }
+
+        for (Recommender.Recommendation recommendation :
+                recommendationList) {
+
+            if (recommendation == null ||
+                    recommendation.cafe == null ||
+                    recommendation.cafe.name == null) {
+                continue;
+            }
+
+            if (cafeName.equals(recommendation.cafe.name)) {
+                return recommendation.cafe;
+            }
+        }
+
+        return null;
     }
 }

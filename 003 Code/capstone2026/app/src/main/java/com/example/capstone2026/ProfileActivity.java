@@ -6,6 +6,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +16,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
@@ -25,6 +27,9 @@ public class ProfileActivity extends AppCompatActivity {
     private EditText editProfileNickname;
     private Spinner spinnerProfileGender, spinnerProfileAge;
     private Button btnSaveProfile, btnLogout;
+
+    private TextView txtBadgeSummary;
+    private Button btnViewBadges;
 
     // [추가] 파이어베이스 인스턴스 변수 정의
     private FirebaseFirestore db;
@@ -59,6 +64,9 @@ public class ProfileActivity extends AppCompatActivity {
         btnSaveProfile = findViewById(R.id.btnSaveProfile);
         btnLogout = findViewById(R.id.btnLogout);
 
+        txtBadgeSummary = findViewById(R.id.txtBadgeSummary);
+        btnViewBadges = findViewById(R.id.btnViewBadges);
+
         // [유지] 기존 스피너 어댑터 바인딩 로직
         ArrayAdapter<String> genderAdapter = new ArrayAdapter<>(
                 this,
@@ -78,6 +86,17 @@ public class ProfileActivity extends AppCompatActivity {
 
         // [수정] SharedPreferences 로직을 제거하고, 서버(Firestore)에서 내 프로필 로드
         loadUserProfileFromServer();
+
+        loadBadgeSummary();
+
+        btnViewBadges.setOnClickListener(v -> {
+            Intent intent = new Intent(
+                    ProfileActivity.this,
+                    BadgeActivity.class
+            );
+
+            startActivity(intent);
+        });
 
         // [수정] 저장 버튼 클릭 시 파이어베이스 클라우드 데이터 병합 저장
         btnSaveProfile.setOnClickListener(v -> {
@@ -122,6 +141,15 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (currentUser != null) {
+            loadBadgeSummary();
+        }
+    }
+
     // [추가] 내 UID 문서에서 프로필을 실시간으로 읽어와 UI 셋팅하는 함수
     private void loadUserProfileFromServer() {
         db.collection("users").document(currentUser.getUid())
@@ -154,6 +182,46 @@ public class ProfileActivity extends AppCompatActivity {
                         }
                     } else {
                         Toast.makeText(this, "프로필 로드 실패", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void loadBadgeSummary() {
+        if (currentUser == null) {
+            return;
+        }
+
+        db.collection("users")
+                .document(currentUser.getUid())
+                .collection("badges")
+                .get()
+                .addOnCompleteListener(task -> {
+
+                    if (task.isSuccessful() && task.getResult() != null) {
+
+                        int unlockedCount = 0;
+
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+
+                            Boolean unlocked =
+                                    document.getBoolean("unlocked");
+
+                            if (Boolean.TRUE.equals(unlocked)) {
+                                unlockedCount++;
+                            }
+                        }
+
+                        txtBadgeSummary.setText(
+                                "현재 획득한 배지 "
+                                        + unlockedCount
+                                        + "개"
+                        );
+
+                    } else {
+
+                        txtBadgeSummary.setText(
+                                "배지 정보를 불러오지 못했습니다."
+                        );
                     }
                 });
     }

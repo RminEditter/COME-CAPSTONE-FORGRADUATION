@@ -52,6 +52,14 @@ public class VisitHistoryAdapter extends RecyclerView.Adapter<VisitHistoryAdapte
 
         final boolean isOwner = currentUid.equals(record.getUserUid());
 
+        if (isOwner) {
+            holder.tvWriter.setText("작성자: 나");
+            holder.tvEditGuide.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvWriter.setText("작성자: 다른 사용자");
+            holder.tvEditGuide.setVisibility(View.GONE);
+        }
+
         holder.itemView.setOnLongClickListener(v -> {
             if (!isOwner) {
                 Toast.makeText(v.getContext(), "본인이 작성한 기록만 삭제할 수 있습니다.", Toast.LENGTH_SHORT).show();
@@ -113,17 +121,21 @@ public class VisitHistoryAdapter extends RecyclerView.Adapter<VisitHistoryAdapte
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvCafeName;
+        TextView tvWriter;
         TextView tvRating;
         TextView tvMemo;
         TextView tvDate;
+        TextView tvEditGuide;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
             tvCafeName = itemView.findViewById(R.id.tvCafeName);
+            tvWriter = itemView.findViewById(R.id.tvWriter);
             tvRating = itemView.findViewById(R.id.tvRating);
             tvMemo = itemView.findViewById(R.id.tvMemo);
             tvDate = itemView.findViewById(R.id.tvDate);
+            tvEditGuide = itemView.findViewById(R.id.tvEditGuide);
         }
     }
 }

@@ -32,7 +32,12 @@ public class BadgeRuleEngine {
         if (hasTag(cafe.tags, Tag.BEAN_ACIDIC)) deltas.add(new BadgeDelta("ACIDIC_LOVER", 1));       // goal=5
 
         // 2. 카공 마스터 (Tag.WORK -> Tag.WORK_FRIENDLY)
-        if (hasTag(cafe.tags, Tag.WORK_FRIENDLY)) deltas.add(new BadgeDelta("WORK_MASTER", 1));         // goal=10
+        if (hasTag(cafe.tags, Tag.WORK_FRIENDLY)
+                || hasTag(cafe.tags, Tag.OUTLET_MANY)
+                || hasTag(cafe.tags, Tag.WIFI_FAST)
+                || hasTag(cafe.tags, Tag.LAPTOP_OK)) {
+            deltas.add(new BadgeDelta("WORK_MASTER", 1));         // goal=10
+        }
 
         // 3. 디저트 탐험가 (기존 유지)
         if (hasTag(cafe.tags, Tag.DESSERT)) deltas.add(new BadgeDelta("DESSERT_EXPLORER", 1)); // goal=7

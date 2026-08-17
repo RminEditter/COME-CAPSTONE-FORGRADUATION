@@ -13,6 +13,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +63,7 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         holder.tvName.setText(result.cafe.name);
         holder.tvReason.setText(result.reason);
         holder.tvMatch.setText("추천 점수: " + result.score + "점");
+
         if (result.distanceMeters >= 1000) {
             holder.tvDistance.setText(
                     String.format("약 %.1fkm", result.distanceMeters / 1000.0)
@@ -121,6 +128,22 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
             v.getContext().startActivity(intent);
         });
 
+        holder.btnFeedbackLike.setOnClickListener(v -> {
+            saveRecommendationFeedback(
+                    v.getContext(),
+                    result,
+                    "LIKE"
+            );
+        });
+
+        holder.btnFeedbackDislike.setOnClickListener(v -> {
+            saveRecommendationFeedback(
+                    v.getContext(),
+                    result,
+                    "DISLIKE"
+            );
+        });
+
         // 💡 카드 클릭 시 사용자가 선택한 카페 이름을 '최근 본 카페'로 실시간 영구 저장!
         holder.itemView.setOnClickListener(v -> {
             Context context = v.getContext();
@@ -144,6 +167,125 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         });
     }
 
+    private void saveRecommendationFeedback(
+            Context context,
+            Recommender.Recommendation result,
+            String feedback
+    ) {
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (currentUser == null) {
+            Toast.makeText(
+                    context,
+                    "로그인 후 이용할 수 있습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        if (result == null || result.cafe == null) {
+            Toast.makeText(
+                    context,
+                    "카페 정보가 없습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        String uid = currentUser.getUid();
+        String cafeId = result.cafe.id != null ? result.cafe.id : "";
+        String cafeName = result.cafe.name != null ? result.cafe.name : "";
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("recommendation_feedback")
+                .whereEqualTo("userUid", uid)
+                .whereEqualTo("cafeId", cafeId)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+
+                    Map<String, Object> feedbackData = new HashMap<>();
+
+                    feedbackData.put("userUid", uid);
+                    feedbackData.put("cafeId", cafeId);
+                    feedbackData.put("cafeName", cafeName);
+                    feedbackData.put("feedback", feedback);
+                    feedbackData.put("createdAt", FieldValue.serverTimestamp());
+
+                    if (!queryDocumentSnapshots.isEmpty()) {
+
+                        String documentId = queryDocumentSnapshots
+                                .getDocuments()
+                                .get(0)
+                                .getId();
+
+                        db.collection("recommendation_feedback")
+                                .document(documentId)
+                                .update(feedbackData)
+                                .addOnSuccessListener(aVoid -> {
+                                    showFeedbackToast(
+                                            context,
+                                            feedback
+                                    );
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(
+                                            context,
+                                            "추천 피드백 저장에 실패했습니다.",
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                });
+
+                    } else {
+
+                        db.collection("recommendation_feedback")
+                                .add(feedbackData)
+                                .addOnSuccessListener(documentReference -> {
+                                    showFeedbackToast(
+                                            context,
+                                            feedback
+                                    );
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(
+                                            context,
+                                            "추천 피드백 저장에 실패했습니다.",
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(
+                            context,
+                            "추천 피드백 확인에 실패했습니다.",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                });
+    }
+
+    private void showFeedbackToast(
+            Context context,
+            String feedback
+    ) {
+
+        if ("LIKE".equals(feedback)) {
+            Toast.makeText(
+                    context,
+                    "잘 맞았어요 피드백이 저장되었습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+        } else {
+            Toast.makeText(
+                    context,
+                    "취향이 아니에요 피드백이 저장되었습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+        }
+    }
+
     @Override
     public int getItemCount() {
         return resultList != null ? resultList.size() : 0;
@@ -164,6 +306,8 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         TextView tvTags;
 
         Button btnMap;
+        Button btnFeedbackLike;
+        Button btnFeedbackDislike;
 
         public ViewHolder(@NonNull View v) {
             super(v);
@@ -177,6 +321,8 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
             tvTags = v.findViewById(R.id.tv_tags);
 
             btnMap = v.findViewById(R.id.btnMap);
+            btnFeedbackLike = v.findViewById(R.id.btnFeedbackLike);
+            btnFeedbackDislike = v.findViewById(R.id.btnFeedbackDislike);
         }
     }
 }

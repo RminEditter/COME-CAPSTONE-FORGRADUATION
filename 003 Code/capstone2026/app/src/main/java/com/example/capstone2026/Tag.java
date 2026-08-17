@@ -45,7 +45,14 @@ public enum Tag {
     COLLEAGUE,
 
     // =========================
-    // 7. 추천 우선순위(가중치)
+    // 7. 카공 세부 태그
+    // =========================
+    OUTLET_MANY,       // 콘센트 많음
+    WIFI_FAST,         // 와이파이 빠름
+    LAPTOP_OK,         // 노트북 사용 가능
+
+    // =========================
+    // 8. 추천 우선순위(가중치)
     // =========================
     MOOD,
     DISTANCE;
@@ -58,34 +65,55 @@ public enum Tag {
 
     static {
 
+        // =========================
         // 원두
+        // =========================
         KO_LABEL.put(BEAN_NUTTY, "고소한 원두");
         KO_LABEL.put(BEAN_ACIDIC, "산미 있는 원두");
 
+        // =========================
         // 카페 성향
+        // =========================
         KO_LABEL.put(INTERIOR_PRETTY, "인테리어");
         KO_LABEL.put(DRINK_TASTY, "커피 맛");
         KO_LABEL.put(HIP, "힙한 감성");
         KO_LABEL.put(WORK_FRIENDLY, "카공");
 
+        // =========================
         // 디저트
+        // =========================
         KO_LABEL.put(DESSERT, "디저트");
 
+        // =========================
         // 스페셜티
+        // =========================
         KO_LABEL.put(SPECIALTY_DRIP, "스페셜티");
 
+        // =========================
         // 규모
+        // =========================
         KO_LABEL.put(SMALL_CAFE, "소형 카페");
         KO_LABEL.put(LARGE_CAFE, "대형 카페");
 
+        // =========================
         // 방문 인원
+        // =========================
         KO_LABEL.put(SOLO, "혼자");
         KO_LABEL.put(COUPLE, "연인");
         KO_LABEL.put(FRIEND, "친구");
         KO_LABEL.put(FAMILY, "가족");
         KO_LABEL.put(COLLEAGUE, "직장동료");
 
+        // =========================
+        // 카공 세부 태그
+        // =========================
+        KO_LABEL.put(OUTLET_MANY, "콘센트 많음");
+        KO_LABEL.put(WIFI_FAST, "와이파이 빠름");
+        KO_LABEL.put(LAPTOP_OK, "노트북 사용 가능");
+
+        // =========================
         // 추천 우선순위
+        // =========================
         KO_LABEL.put(MOOD, "분위기");
         KO_LABEL.put(DISTANCE, "거리");
     }

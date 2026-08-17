@@ -107,6 +107,7 @@ public class SurveyActivity extends AppCompatActivity {
                 "어떤 분위기의 카페를 찾고 있나요?",
                 "최대 2개까지 선택할 수 있어요.",
                 true,
+                2,
                 new Option("조용하고 차분한 분위기", "WORK_FRIENDLY"),
                 new Option("카공하기 좋은 곳", "WORK_FRIENDLY"),
                 new Option("인테리어가 예쁜 곳", "INTERIOR_PRETTY"),
@@ -164,6 +165,19 @@ public class SurveyActivity extends AppCompatActivity {
                 new Option("넓은 대형카페", "LARGE_CAFE")
         ));
 
+        // =========================
+        // 카공 세부 조건
+        // =========================
+        questions.add(new Question(
+                "카페에서 작업하거나 노트북을 사용하시나요?",
+                "원하는 조건을 모두 선택할 수 있어요.",
+                true,
+                3,
+                new Option("콘센트가 많은 곳", "OUTLET_MANY"),
+                new Option("와이파이가 빠른 곳", "WIFI_FAST"),
+                new Option("노트북 사용이 편한 곳", "LAPTOP_OK")
+        ));
+
         questions.add(new Question(
                 "지금 가장 중요한 것은?",
                 "추천 점수의 가중치로 사용돼요.",
@@ -188,6 +202,7 @@ public class SurveyActivity extends AppCompatActivity {
 
     private void updateProgress(int position) {
         txtProgress.setText((position + 1) + " / " + questions.size());
+        progressSurvey.setMax(questions.size());
         progressSurvey.setProgress(position + 1);
         btnPrev.setVisibility(position == 0 ? View.INVISIBLE : View.VISIBLE);
         btnNext.setText(position == questions.size() - 1 ? "추천 카페 보기" : "다음");
@@ -199,7 +214,7 @@ public class SurveyActivity extends AppCompatActivity {
         for (int i = 0; i < questions.size(); i++) {
             Question question = questions.get(i);
 
-            if (i == 6) { // 7번째 질문: 가장 중요한 가중치 태그
+            if (i == 7) { // 8번째 질문: 가장 중요한 가중치 태그
                 priorityTag = question.getSelectedTag();
             } else {
                 selectedTags.addAll(question.getSelectedTags());
@@ -244,6 +259,7 @@ public class SurveyActivity extends AppCompatActivity {
         String title;
         String subtitle;
         boolean multiple;
+        int maxSelections;
         ArrayList<Option> options = new ArrayList<>();
         ArrayList<Integer> selectedIndexes = new ArrayList<>();
 
@@ -251,6 +267,22 @@ public class SurveyActivity extends AppCompatActivity {
             this.title = title;
             this.subtitle = subtitle;
             this.multiple = multiple;
+
+            // 기본 다중 선택 개수는 2개
+            this.maxSelections = 2;
+
+            for (Option option : options) {
+                this.options.add(option);
+            }
+        }
+
+        Question(String title, String subtitle, boolean multiple, int maxSelections, Option... options) {
+            this.title = title;
+            this.subtitle = subtitle;
+            this.multiple = multiple;
+
+            // 질문별 최대 선택 개수를 지정
+            this.maxSelections = maxSelections;
 
             for (Option option : options) {
                 this.options.add(option);
@@ -328,9 +360,15 @@ public class SurveyActivity extends AppCompatActivity {
 
                     checkBox.setOnClickListener(v -> {
                         if (checkBox.isChecked()) {
-                            if (question.selectedIndexes.size() >= 2) {
+                            if (question.selectedIndexes.size() >= question.maxSelections) {
                                 checkBox.setChecked(false);
-                                Toast.makeText(SurveyActivity.this, "최대 2개까지만 선택할 수 있어요.", Toast.LENGTH_SHORT).show();
+
+                                Toast.makeText(
+                                        SurveyActivity.this,
+                                        "최대 " + question.maxSelections + "개까지만 선택할 수 있어요.",
+                                        Toast.LENGTH_SHORT
+                                ).show();
+
                                 return;
                             }
 
@@ -390,6 +428,7 @@ public class SurveyActivity extends AppCompatActivity {
             }
         }
     }
+
     private void saveSurveyToLocal(ArrayList<String> tags, String priority) {
         Set<String> tagSet = new HashSet<>(tags);
 
@@ -399,6 +438,7 @@ public class SurveyActivity extends AppCompatActivity {
                 .putString("priority_tag", priority)
                 .apply();
     }
+
     private void saveSurveyToFirestore(ArrayList<String> tags, String priority) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 

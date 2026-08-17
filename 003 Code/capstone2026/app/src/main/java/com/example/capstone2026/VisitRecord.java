@@ -40,5 +40,5 @@ public class VisitRecord {
 
     // 어댑터 호환용 메소드
     public String getFbId() { return id; }
-    public void setFbId(String fbId) { this.id = id; }
+    public void setFbId(String fbId) { this.id = fbId; }
 }

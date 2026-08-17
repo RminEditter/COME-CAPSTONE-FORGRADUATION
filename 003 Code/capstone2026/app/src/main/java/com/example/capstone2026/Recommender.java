@@ -3,6 +3,7 @@ package com.example.capstone2026;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import android.location.Location;
 
 public class Recommender {
@@ -27,12 +28,14 @@ public class Recommender {
     public static class Recommendation {
         public CafeModel cafe;
         public int score;
+        public int baseScore;
         public String reason;
         public double distanceMeters;
 
         public Recommendation(CafeModel cafe, int score, String reason, double distanceMeters) {
             this.cafe = cafe;
             this.score = score;
+            this.baseScore = score;
             this.reason = reason;
             this.distanceMeters = distanceMeters;
         }
@@ -161,6 +164,81 @@ public class Recommender {
         );
     }
 
+    public static void applyFeedbackScores(
+            List<Recommendation> recommendations,
+            Map<Tag, Integer> feedbackTagScores
+    ) {
+
+        if (recommendations == null || recommendations.isEmpty()) {
+            return;
+        }
+
+        for (Recommendation recommendation : recommendations) {
+
+            if (recommendation == null || recommendation.cafe == null) {
+                continue;
+            }
+
+            // 피드백 점수가 여러 번 누적되지 않도록 기존 알고리즘 점수로 초기화
+            recommendation.score = recommendation.baseScore;
+
+            if (feedbackTagScores == null ||
+                    feedbackTagScores.isEmpty() ||
+                    recommendation.cafe.tags == null) {
+                continue;
+            }
+
+            int feedbackBonus = 0;
+
+            for (Tag cafeTag : recommendation.cafe.tags) {
+
+                if (cafeTag == null) {
+                    continue;
+                }
+
+                Integer preferenceScore = feedbackTagScores.get(cafeTag);
+
+                if (preferenceScore != null) {
+                    feedbackBonus += preferenceScore * 3;
+                }
+            }
+
+            // 피드백으로 인한 점수 변화가 너무 커지는 것을 방지
+            if (feedbackBonus > 15) {
+                feedbackBonus = 15;
+            }
+
+            if (feedbackBonus < -15) {
+                feedbackBonus = -15;
+            }
+
+            recommendation.score += feedbackBonus;
+
+            if (recommendation.score > 100) {
+                recommendation.score = 100;
+            }
+
+            if (recommendation.score < 0) {
+                recommendation.score = 0;
+            }
+        }
+
+        Collections.sort(recommendations, (a, b) -> {
+
+            if (b.score != a.score) {
+                return Integer.compare(
+                        b.score,
+                        a.score
+                );
+            }
+
+            return Double.compare(
+                    a.distanceMeters,
+                    b.distanceMeters
+            );
+        });
+    }
+
     private static boolean hasTag(Tag[] cafeTags, Tag targetTag) {
         if (cafeTags == null || targetTag == null) {
             return false;
@@ -187,6 +265,16 @@ public class Recommender {
                     userTag == Tag.WORK_FRIENDLY ||
                     userTag == Tag.SMALL_CAFE ||
                     userTag == Tag.LARGE_CAFE) {
+                return 3;
+            }
+        }
+
+        // 작업하기 편함 우선시 관련 태그 가중치 확대
+        if (priorityTag == Tag.WORK_FRIENDLY) {
+            if (userTag == Tag.WORK_FRIENDLY ||
+                    userTag == Tag.OUTLET_MANY ||
+                    userTag == Tag.WIFI_FAST ||
+                    userTag == Tag.LAPTOP_OK) {
                 return 3;
             }
         }

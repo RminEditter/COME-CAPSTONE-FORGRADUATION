@@ -79,6 +79,14 @@ public class ReasonGenerator {
                     || matchedTag == Tag.LARGE_CAFE;
         }
 
+        // 작업하기 편함 우선 선택 시 카공 관련 태그
+        if (priorityTag == Tag.WORK_FRIENDLY) {
+            return matchedTag == Tag.WORK_FRIENDLY
+                    || matchedTag == Tag.OUTLET_MANY
+                    || matchedTag == Tag.WIFI_FAST
+                    || matchedTag == Tag.LAPTOP_OK;
+        }
+
         return false;
     }
 }
