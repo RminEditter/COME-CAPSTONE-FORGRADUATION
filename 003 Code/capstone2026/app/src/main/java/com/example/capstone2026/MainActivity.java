@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         BottomNavHelper.setup(this);
         //cleanupFranchiseDataAllInOne();
         //updateAllCafeTags(); 태그부여 함수 건들지말것.
+        //reanalyzeAllCafeTags();
     }
 
     @Override
@@ -523,7 +524,7 @@ public class MainActivity extends AppCompatActivity {
 
                 // 🍕 피자 및 패스트푸드/음식점 키워드 추가
                 "피자", "도미노", "피자헛", "알볼로", "미스터피자", "피자스쿨", "59쌀피자",
-                "버거", "롯데리아", "맥도날드", "맘스터치", "KFC"
+                "버거", "롯데리아", "맥도날드", "맘스터치", "KFC", "상호명없음", "스터디","분식"
         );
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -562,5 +563,67 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+    private void reanalyzeAllCafeTags() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("cafes").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                List<QueryDocumentSnapshot> docs = new ArrayList<>();
+                for (QueryDocumentSnapshot d : task.getResult()) {
+                    docs.add(d);
+                }
+
+                ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+                int scheduledDelayIndex = 0;
+
+                for (int i = 0; i < docs.size(); i++) {
+                    final QueryDocumentSnapshot document = docs.get(i);
+                    String name = document.getString("name");
+                    String addr = document.getString("address");
+
+                    // 1. 프랜차이즈 스킵
+                    if (isFranchise(name)) {
+                        Log.d("CafeFit", "프랜차이즈 스킵: " + name);
+                        continue;
+                    }
+
+                    // 💡 [핵심] 기존 태그가 존재하더라도 스킵하지 않고 새로운 Tag 기준으로 덮어씁니다!
+
+                    final int delayMultiplier = scheduledDelayIndex++;
+
+                    executor.schedule(() -> {
+                        if (name == null) return;
+
+                        Log.d("CafeFit", "🔄 태그 재분석 시작: " + name);
+
+                        NaverReviewAnalyzer.analyzeCafe(name, addr, tags -> {
+                            if (tags != null && !tags.isEmpty()) {
+                                List<String> tagStrings = new ArrayList<>();
+                                for (Tag t : tags) {
+                                    tagStrings.add(t.name());
+                                }
+
+                                Map<String, Object> updateData = new HashMap<>();
+                                updateData.put("tags", tagStrings);
+
+                                db.collection("cafes")
+                                        .document(document.getId())
+                                        .update(updateData)
+                                        .addOnSuccessListener(aVoid -> Log.d("CafeFit", "✅ 새 태그 성공: " + name + " -> " + tagStrings))
+                                        .addOnFailureListener(e -> Log.e("CafeFit", "❌ DB 업데이트 실패: " + name, e));
+                            } else {
+                                Log.w("CafeFit", "⚠️ 태그 수집 실패 또는 데이터 없음: " + name);
+                            }
+                        });
+
+                    }, delayMultiplier * 1000L, TimeUnit.MILLISECONDS);
+                }
+
+                executor.shutdown();
+            } else {
+                Log.e("CafeFit", "카페 목록 불러오기 실패", task.getException());
+            }
+        });
     }
 }
