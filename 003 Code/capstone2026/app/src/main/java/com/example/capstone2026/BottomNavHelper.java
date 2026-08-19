@@ -18,14 +18,17 @@ public class BottomNavHelper {
         AppCompatButton btnNavProfile =
                 activity.findViewById(R.id.btnNavProfile);
 
+        AppCompatButton btnNavCommunity =
+                activity.findViewById(R.id.btnNavCommunity);
+
         // 지도 버튼
         if (btnNavMap != null) {
             btnNavMap.setOnClickListener(v -> {
 
-                if (!(activity instanceof RecommendCafeActivity)) {
+                if (!(activity instanceof MapActivity)) {
 
                     Intent intent =
-                            new Intent(activity, RecommendCafeActivity.class);
+                            new Intent(activity, MapActivity.class);
 
                     activity.startActivity(intent);
                 }
@@ -54,6 +57,20 @@ public class BottomNavHelper {
 
                     Intent intent =
                             new Intent(activity, ProfileActivity.class);
+
+                    activity.startActivity(intent);
+                }
+            });
+        }
+
+        // 커뮤니티 버튼
+        if (btnNavCommunity != null) {
+            btnNavCommunity.setOnClickListener(v -> {
+
+                if (!(activity instanceof CommunityActivity)) {
+
+                    Intent intent =
+                            new Intent(activity, CommunityActivity.class);
 
                     activity.startActivity(intent);
                 }

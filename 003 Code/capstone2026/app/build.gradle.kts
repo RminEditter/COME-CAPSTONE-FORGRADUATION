@@ -55,4 +55,5 @@ dependencies {
     implementation("androidx.viewpager2:viewpager2:1.1.0")
     implementation("androidx.cardview:cardview:1.0.0")
 
+    implementation("org.maplibre.gl:android-sdk-opengl:13.0.2")
 }

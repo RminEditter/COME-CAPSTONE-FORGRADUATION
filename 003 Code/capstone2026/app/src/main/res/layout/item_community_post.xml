@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:background="@drawable/bg_home_card"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvPostWriter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="사용자"
+        android:textColor="@color/brown_dark"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvPostContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:lineSpacingExtra="4dp"
+        android:text="커뮤니티 글 내용"
+        android:textColor="@color/text_dark"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/tvPostDate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="2026-08-19 15:00"
+        android:textColor="#8B7768"
+        android:textSize="12sp" />
+
+</LinearLayout>
