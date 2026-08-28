@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottomSheetLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/white"
+    android:elevation="16dp"
+    android:orientation="vertical"
+    android:padding="20dp"
+    app:behavior_hideable="true"
+    app:behavior_peekHeight="0dp"
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+    <!-- 상단 작은 드래그 바 -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="12dp"
+        android:background="#DDDDDD" />
+
+    <!-- 카페 이름 -->
+    <TextView
+        android:id="@+id/tvCafeName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="카페 이름"
+        android:textColor="#111111"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <!-- 카페 주소 및 거리 -->
+    <TextView
+        android:id="@+id/tvCafeAddress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="대전광역시 중구 ..."
+        android:textColor="#666666"
+        android:textSize="14sp" />
+
+    <!-- 태그 목록 (ChipGroup) -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupCafeTags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" />
+
+    <!-- 상세 보기 버튼 -->
+    <Button
+        android:id="@+id/btnOpenDetail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#FF6F00"
+        android:text="카페 상세 정보 보기"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

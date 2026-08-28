@@ -1,92 +1,234 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/ivory_bg"
-    android:padding="24dp">
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingBottom="30dp">
 
-        <TextView
-            android:id="@+id/txtDetailCafeName"
+        <!-- 1. 상단 타이틀바 (뒤로가기 + 카페명) -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="카페 이름"
-            android:textColor="@color/brown_dark"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="16dp">
 
-        <TextView
-            android:id="@+id/txtDetailAddress"
+            <ImageButton
+                android:id="@+id/btnDetailBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="뒤로가기"
+                android:src="@android:drawable/ic_menu_revert" />
+
+            <TextView
+                android:id="@+id/txtDetailCafeName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:text="카페 이름"
+                android:textColor="@color/brown_dark"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnFavorite"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:backgroundTint="@color/brown_dark"
+                android:text="♡ 즐겨찾기"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- 2. 주소 & 평점 카드 영역 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="주소"
-            android:textColor="@color/text_dark"
-            android:textSize="16sp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginHorizontal="16dp"
+            android:background="@android:color/white"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <TextView
-            android:id="@+id/txtDetailTags"
+            <!-- 평점 및 요약 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/txtAverageRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⭐ 0.0"
+                    android:textColor="#D84315"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtReviewCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="(0개 리뷰)"
+                    android:textColor="#757575"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/txtDetailAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="📍 주소 정보가 표시됩니다."
+                android:textColor="#424242"
+                android:textSize="14sp" />
+
+            <!-- Dynamic Chip Group (태그 목록) -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupDetailTags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" />
+
+        </LinearLayout>
+
+        <!-- 3. 실제 앱 느낌의 Quick Action 버튼 바 (전화/길찾기/공유) -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="태그"
-            android:textColor="@color/brown_dark"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:id="@+id/txtDetailReason"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="추천 이유"
-            android:textColor="@color/text_dark"
-            android:textSize="16sp"
-            android:layout_marginBottom="24dp" />
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnFavorite"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:background="@drawable/rounded_brown_button"
-            android:text="♡ 즐겨찾기 추가"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnAddVisitRecord"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_marginHorizontal="16dp"
             android:layout_marginTop="12dp"
-            android:background="@drawable/rounded_brown_button"
-            android:text="방문 기록 작성"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:gravity="center"
+            android:orientation="horizontal">
 
-        <TextView
+            <ImageButton
+                android:id="@+id/btnActionCall"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:background="@android:color/white"
+                android:contentDescription="전화걸기"
+                android:elevation="1dp"
+                android:src="@android:drawable/ic_menu_call" />
+
+            <ImageButton
+                android:id="@+id/btnActionNavi"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginHorizontal="3dp"
+                android:layout_weight="1"
+                android:background="@android:color/white"
+                android:contentDescription="길찾기"
+                android:elevation="1dp"
+                android:src="@android:drawable/ic_menu_compass" />
+
+            <ImageButton
+                android:id="@+id/btnActionShare"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:background="@android:color/white"
+                android:contentDescription="공유하기"
+                android:elevation="1dp"
+                android:src="@android:drawable/ic_menu_share" />
+
+        </LinearLayout>
+
+        <!-- 4. 카페 추천 사유/특징 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="다른 이용객들의 기록"
-            android:textColor="@color/brown_dark"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginTop="32dp"
-            android:layout_marginBottom="12dp" />
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@android:color/white"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvCafeVisitHistory"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💡 카페 특징 및 추천 사유"
+                android:textColor="@color/brown_dark"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtDetailReason"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:lineSpacingExtra="4dp"
+                android:text="특징 설명..."
+                android:textColor="#616161"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- 5. 사용자 방문 리뷰 섹션 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false" />
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:text="📝 방문자 리뷰"
+                    android:textColor="@color/brown_dark"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btnAddVisitRecord"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:layout_alignParentEnd="true"
+                    android:backgroundTint="@color/brown_dark"
+                    android:text="+ 리뷰 작성"
+                    android:textSize="12sp" />
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/txtNoReviews"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="24dp"
+                android:text="아직 작성된 리뷰가 없습니다.\n첫 번째 리뷰를 남겨보세요!"
+                android:textColor="#9E9E9E"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCafeVisitHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false" />
+
+        </LinearLayout>
 
     </LinearLayout>
 
-</androidx.core.widget.NestedScrollView>
+</ScrollView>

@@ -1,90 +1,158 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ivory_bg"
-    android:orientation="vertical">
+    android:background="@color/ivory_bg">
 
+    <!-- 메인 컨텐츠 (상단 바, 스피너, 태그 필터, 지도) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="18dp"
-        android:paddingTop="14dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="10dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnBack"
-            android:layout_width="72dp"
-            android:layout_height="42dp"
-            android:background="@drawable/bg_back_button"
-            android:text="←"
-            android:textAllCaps="false"
-            android:textColor="#4A2C1A"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="0dp"
+        <!-- 1. 상단 타이틀 바 -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:layout_weight="1"
-            android:text="🗺 카페 지도"
-            android:textColor="@color/brown_dark"
-            android:textSize="23sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="18dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="10dp">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnBack"
+                android:layout_width="72dp"
+                android:layout_height="42dp"
+                android:background="@drawable/bg_back_button"
+                android:text="←"
+                android:textAllCaps="false"
+                android:textColor="#4A2C1A"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:text="🗺 카페 지도"
+                android:textColor="@color/brown_dark"
+                android:textSize="23sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- 2. 자치구 스피너 & 내 위치 버튼 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="8dp">
+
+            <Spinner
+                android:id="@+id/spinnerDistrict"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_search_box"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp" />
+
+            <Button
+                android:id="@+id/btnMyLocation"
+                android:layout_width="100dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="10dp"
+                android:backgroundTint="@color/brown_dark"
+                android:singleLine="true"
+                android:text="내 위치"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- 3. 상단 태그 칩 필터 (가로 스크롤) -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="8dp"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupFilter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleLine="true"
+                app:singleSelection="false">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipAll"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="#전체" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipWork"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#카공" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipOutlet"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#콘센트많음" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipLaptop"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#노트북가능" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipDessert"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#디저트" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipNutty"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#고소한원두" />
+
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+
+        <!-- 4. 지도 영역 (LinearLayout 내부에서 남아있는 공간을 채우도록 layout_height="match_parent" 설정) -->
+        <org.maplibre.android.maps.MapView
+            android:id="@+id/mapView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:ignore="MissingClass" />
 
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="18dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="10dp">
+    <!-- 5. 마커 클릭 시 올라올 하단 바텀시트 레이아웃 연결 -->
+    <include layout="@layout/bottom_sheet_cafe" />
 
-        <Spinner
-            android:id="@+id/spinnerDistrict"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_search_box"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
-
-        <Button
-            android:id="@+id/btnMyLocation"
-            android:layout_width="100dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="10dp"
-            android:backgroundTint="@color/brown_dark"
-            android:singleLine="true"
-            android:text="내 위치"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-    </LinearLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="18dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="8dp"
-        android:text="지역을 선택하면 해당 구의 카페만 지도에 표시됩니다."
-        android:textColor="#7A6658"
-        android:textSize="13sp" />
-
-    <org.maplibre.android.maps.MapView
-        android:id="@+id/mapView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
