@@ -39,14 +39,14 @@ public class ReasonGenerator {
         }
 
         // 2. 거리 정보 표시
-        reason.append("✓ 현재 위치에서 ");
-
-        if (distanceMeters < 1000) {
-            reason.append("약 ")
+        if (!Double.isFinite(distanceMeters)) {
+            reason.append("✓ 카페 위치 정보가 없어 거리를 계산하지 못했어요");
+        } else if (distanceMeters < 1000) {
+            reason.append("✓ 기준 위치에서 약 ")
                     .append((int) distanceMeters)
                     .append("m 떨어져 있어요");
         } else {
-            reason.append("약 ")
+            reason.append("✓ 기준 위치에서 약 ")
                     .append(String.format("%.1f", distanceMeters / 1000.0))
                     .append("km 떨어져 있어요");
         }

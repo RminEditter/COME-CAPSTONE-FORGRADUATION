@@ -17,9 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -36,7 +34,7 @@ public class CafeDetailActivity extends AppCompatActivity {
     private String cafeId;
     private String cafeName;
     private String address;
-    private String phone = "02-1234-5678"; // Intent 파라미터로 전달받거나 기본값 세팅
+    private String phone;
 
     private boolean isFavorite;
 
@@ -73,6 +71,24 @@ public class CafeDetailActivity extends AppCompatActivity {
 
         // 버튼 클릭 리스너 설정
         setupClickListeners();
+        boolean knownCafe = CafeIdentity.hasId(cafeId);
+        btnFavorite.setEnabled(knownCafe);
+        btnAddVisitRecord.setEnabled(knownCafe);
+        if (knownCafe) {
+            AccountPreferences.open(this, "CafeFitRecent").edit()
+                    .putString("recentCafe", cafeName)
+                    .putString("recentCafeId", cafeId)
+                    .apply();
+            firestoreDb.collection("cafes").document(cafeId).get()
+                    .addOnSuccessListener(document -> {
+                        if (isFinishing() || isDestroyed()) return;
+                        if (document.exists() && document.getString("phone") != null) {
+                            phone = document.getString("phone");
+                        }
+                        updateCallButton();
+                    });
+        }
+        updateCallButton();
 
         // 리뷰 리사이클러뷰 레이아웃 매니저 설정
         if (rvCafeVisitHistory != null) {
@@ -113,13 +129,15 @@ public class CafeDetailActivity extends AppCompatActivity {
             Intent intent = new Intent(CafeDetailActivity.this, VisitRecordActivity.class);
             intent.putExtra("mode", "add");
             intent.putExtra("cafeName", cafeName);
+            intent.putExtra("cafeId", cafeId);
             startActivity(intent);
         });
 
         // 📞 전화걸기 기능
         if (btnCall != null) {
             btnCall.setOnClickListener(v -> {
-                Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + phone));
+                if (phone == null || phone.trim().isEmpty()) return;
+                Intent intent = new Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", phone, null));
                 startActivity(intent);
             });
         }
@@ -173,31 +191,13 @@ public class CafeDetailActivity extends AppCompatActivity {
     private void loadThisCafeVisitRecords() {
         if (cafeName == null || rvCafeVisitHistory == null) return;
 
-        firestoreDb.collection("visit_records")
-                .whereEqualTo("cafeName", cafeName)
-                .get()
+        VisitRecordRepository.forCafe(cafeId, cafeName)
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        List<VisitRecord> thisCafeRecords = new ArrayList<>();
+                    if (isFinishing() || isDestroyed()) return;
+                    if (task.isSuccessful()) {
+                        List<VisitRecord> thisCafeRecords = task.getResult();
                         float totalRating = 0.0f;
-
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            String name = document.getString("cafeName");
-                            Double ratingDouble = document.getDouble("rating");
-                            float rating = ratingDouble != null ? ratingDouble.floatValue() : 0.0f;
-                            String memo = document.getString("memo");
-                            Long visitedAtLong = document.getLong("visitedAt");
-                            long visitedAt = visitedAtLong != null ? visitedAtLong : 0L;
-                            String uid = document.getString("userUid");
-
-                            VisitRecord record = new VisitRecord(name, rating, memo, visitedAt);
-                            record.setId(document.getId());
-                            record.setUserUid(uid);
-
-                            thisCafeRecords.add(record);
-                            totalRating += rating;
-                        }
-
+                        for (VisitRecord record : thisCafeRecords) totalRating += record.getRating();
                         // UI 업데이트 (평균 평점 및 리뷰 개수 반영)
                         int reviewCount = thisCafeRecords.size();
                         if (reviewCount > 0) {
@@ -219,22 +219,34 @@ public class CafeDetailActivity extends AppCompatActivity {
 
                         VisitHistoryAdapter adapter = new VisitHistoryAdapter(thisCafeRecords);
                         rvCafeVisitHistory.setAdapter(adapter);
+                    } else {
+                        Toast.makeText(this, "방문 기록을 불러오지 못했습니다.", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
     private void loadFavoriteState() {
-        SharedPreferences prefs = getSharedPreferences("CafeFitFavorites", MODE_PRIVATE);
-        isFavorite = prefs.getBoolean(cafeId, false);
+        SharedPreferences prefs = AccountPreferences.open(this, "CafeFitFavorites");
+        isFavorite = CafeIdentity.hasId(cafeId) && prefs.getBoolean(cafeId, false);
         updateFavoriteButton();
     }
 
+    private void updateCallButton() {
+        if (btnCall != null) {
+            boolean available = phone != null && !phone.trim().isEmpty();
+            btnCall.setEnabled(available);
+            btnCall.setAlpha(available ? 1.0f : 0.4f);
+            btnCall.setContentDescription(available ? "전화 걸기" : "등록된 전화번호 없음");
+        }
+    }
+
     private void toggleFavorite() {
+        if (!CafeIdentity.hasId(cafeId)) return;
         isFavorite = !isFavorite;
         String tags = getIntent().getStringExtra("cafe_tags");
         String reason = getIntent().getStringExtra("cafe_reason");
 
-        SharedPreferences prefs = getSharedPreferences("CafeFitFavorites", MODE_PRIVATE);
+        SharedPreferences prefs = AccountPreferences.open(this, "CafeFitFavorites");
         prefs.edit()
                 .putBoolean(cafeId, isFavorite)
                 .putString(cafeId + "_name", cafeName)

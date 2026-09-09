@@ -3,7 +3,6 @@ package com.example.capstone2026;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.util.Log;
 import android.widget.EditText;
 import android.widget.PopupMenu;
@@ -21,7 +20,6 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +34,6 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-
 public class MainActivity extends AppCompatActivity {
 
     private EditText editSearch;
@@ -46,22 +41,17 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtRecommendCafeName, txtRecommendCafeDesc, txtRecentCafe;
     private TextView txtTopCafe1, txtTopCafe2, txtTopCafe3;
 
-    private List<Tag> selectedTags = new ArrayList<>();
+    private int recommendationRequest = 0;
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
 
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
-    private FusedLocationProviderClient fusedLocationClient;
-
-    private double currentLat = 36.3622;
-    private double currentLng = 127.3568;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
 
@@ -83,13 +73,13 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        SharedPreferences recentPrefs = getSharedPreferences("CafeFitRecent", MODE_PRIVATE);
+        SharedPreferences recentPrefs = AccountPreferences.open(this, "CafeFitRecent");
         String recentCafeName = recentPrefs.getString("recentCafe", "최근 본 카페가 없습니다.");
         txtRecentCafe.setText(recentCafeName);
 
         if (!recentCafeName.equals("최근 본 카페가 없습니다.") && !recentCafeName.isEmpty()) {
             txtRecentCafe.setOnClickListener(v -> {
-                queryCafeAndGoDetail(recentCafeName);
+                queryCafeAndGoDetail(recentPrefs.getString("recentCafeId", null), recentCafeName);
             });
         } else {
             txtRecentCafe.setOnClickListener(null);
@@ -103,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
         txtRecommendCafeName.setText("취향 분석 중...");
         txtRecommendCafeDesc.setText("서버에서 계정 설문 정보를 가져오고 있습니다 🔍");
 
-        loadUserPreferencesFromFirestore(currentUser.getUid());
+        requestCurrentLocation();
     }
 
     private void initViews() {
@@ -119,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
         txtTopCafe2 = findViewById(R.id.txtTopCafe2);
         txtTopCafe3 = findViewById(R.id.txtTopCafe3);
     }
-
 
     private void updateAllCafeTags() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -200,275 +189,137 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-
     private void fetchAllUsersHighestRatedCafes() {
-        if (txtTopCafe1 == null || txtTopCafe2 == null || txtTopCafe3 == null) return;
-
-        txtTopCafe1.setText("1. 전체 평점 계산 중...");
-        txtTopCafe2.setText("2. 전체 평점 계산 중...");
-        txtTopCafe3.setText("3. 전체 평점 계산 중...");
-
-        db.collection("visit_records")
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-
-                        Map<String, List<Double>> cafeRatingsMap = new HashMap<>();
-
-                        for (QueryDocumentSnapshot doc : task.getResult()) {
-                            String cafeName = doc.getString("cafeName");
-                            Object ratingObj = doc.get("rating");
-
-                            if (cafeName != null && ratingObj != null) {
-                                double rating = 0.0;
-                                try {
-                                    if (ratingObj instanceof Number) {
-                                        rating = ((Number) ratingObj).doubleValue();
-                                    } else {
-                                        rating = Double.parseDouble(String.valueOf(ratingObj));
-                                    }
-                                    if (!cafeRatingsMap.containsKey(cafeName)) {
-                                        cafeRatingsMap.put(cafeName, new ArrayList<>());
-                                    }
-                                    cafeRatingsMap.get(cafeName).add(rating);
-                                } catch (Exception ignored) {}
-                            }
-                        }
-
-                        if (cafeRatingsMap.isEmpty()) {
-                            txtTopCafe1.setText("1. 등록된 평점 기록이 없습니다.");
-                            txtTopCafe2.setText("2. 평점 데이터 없음");
-                            txtTopCafe3.setText("3. 평점 데이터 없음");
-                            return;
-                        }
-
-                        List<Map.Entry<String, Double>> cafeAverageList = new ArrayList<>();
-                        for (Map.Entry<String, List<Double>> entry : cafeRatingsMap.entrySet()) {
-                            double sum = 0;
-                            for (double r : entry.getValue()) sum += r;
-                            double avg = sum / entry.getValue().size();
-                            avg = Math.round(avg * 10.0) / 10.0;
-                            cafeAverageList.add(new java.util.AbstractMap.SimpleEntry<>(entry.getKey(), avg));
-                        }
-
-                        Collections.sort(cafeAverageList, (e1, e2) -> Double.compare(e2.getValue(), e1.getValue()));
-
-                        if (cafeAverageList.size() > 0) {
-                            String name1 = cafeAverageList.get(0).getKey();
-                            txtTopCafe1.setText("1. " + name1 + "  ★" + cafeAverageList.get(0).getValue());
-                            txtTopCafe1.setOnClickListener(v -> queryCafeAndGoDetail(name1));
-                        } else {
-                            txtTopCafe1.setText("1. 평점 데이터 없음");
-                            txtTopCafe1.setOnClickListener(null);
-                        }
-
-                        if (cafeAverageList.size() > 1) {
-                            String name2 = cafeAverageList.get(1).getKey();
-                            txtTopCafe2.setText("2. " + name2 + "  ★" + cafeAverageList.get(1).getValue());
-                            txtTopCafe2.setOnClickListener(v -> queryCafeAndGoDetail(name2));
-                        } else {
-                            txtTopCafe2.setText("2. 평점 데이터 없음");
-                            txtTopCafe2.setOnClickListener(null);
-                        }
-
-                        if (cafeAverageList.size() > 2) {
-                            String name3 = cafeAverageList.get(2).getKey();
-                            txtTopCafe3.setText("3. " + name3 + "  ★" + cafeAverageList.get(2).getValue());
-                            txtTopCafe3.setOnClickListener(v -> queryCafeAndGoDetail(name3));
-                        } else {
-                            txtTopCafe3.setText("3. 평점 데이터 없음");
-                            txtTopCafe3.setOnClickListener(null);
-                        }
-
-                    } else {
-                        txtTopCafe1.setText("종합 순위 로드 실패 😢");
-                        txtTopCafe2.setText("네트워크 상태를 확인해 주세요.");
-                        txtTopCafe3.setText("네트워크 상태를 확인해 주세요.");
-                    }
-                });
-    }
-
-    /**
-     * 🎯 [화면 연동 최적화 엔진]
-     */
-    private void queryCafeAndGoDetail(String targetCafeName) {
-        if (RecommendCafeActivity.recommendationList != null && !RecommendCafeActivity.recommendationList.isEmpty()) {
-            for (Recommender.Recommendation r : RecommendCafeActivity.recommendationList) {
-                if (r.cafe != null && r.cafe.name != null && r.cafe.name.equals(targetCafeName)) {
-
-                    StringBuilder tagText = new StringBuilder();
-                    if (r.cafe.tags != null) {
-                        for (Tag tag : r.cafe.tags) {
-                            tagText.append("#")
-                                    .append(tag.getKoreanLabel())
-                                    .append(" ");
-                        }
-                    }
-
-                    Intent intent = new Intent(MainActivity.this, CafeDetailActivity.class);
-                    intent.putExtra("cafe_id", r.cafe.id);
-                    intent.putExtra("cafe_name", r.cafe.name);
-                    intent.putExtra("cafe_address", r.cafe.address);
-                    intent.putExtra("cafe_reason", r.reason);
-                    intent.putExtra("cafe_tags", tagText.toString());
-
-                    startActivity(intent);
-                    return;
-                }
+        TextView[] views = {txtTopCafe1, txtTopCafe2, txtTopCafe3};
+        for (TextView view : views) {
+            view.setText("전체 평점 계산 중...");
+            view.setOnClickListener(null);
+        }
+        com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> cafes =
+                db.collection("cafes").get();
+        com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> visits =
+                db.collection("visit_records").get();
+        com.google.android.gms.tasks.Tasks.whenAll(cafes, visits).addOnCompleteListener(task -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (!task.isSuccessful()) {
+                for (TextView view : views) view.setText("평점을 불러오지 못했습니다.");
+                return;
             }
-        }
-
-        db.collection("cafes")
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        DocumentSnapshot matchedDoc = null;
-                        for (DocumentSnapshot doc : task.getResult().getDocuments()) {
-                            String dbCafeName = doc.getString("name");
-                            if (dbCafeName != null && dbCafeName.equals(targetCafeName)) {
-                                matchedDoc = doc;
-                                break;
-                            }
-                        }
-
-                        Intent intent = new Intent(MainActivity.this, CafeDetailActivity.class);
-
-                        if (matchedDoc != null) {
-                            String cafeId = matchedDoc.getId();
-                            String address = matchedDoc.getString("address");
-                            if (address == null) address = "주소 정보 없음";
-
-                            StringBuilder tagText = new StringBuilder();
-                            List<String> rawTags = (List<String>) matchedDoc.get("tags");
-                            if (rawTags != null) {
-                                for (String tagStr : rawTags) {
-                                    if (tagStr == null || tagStr.trim().isEmpty()) continue;
-                                    try {
-                                        String cleanTag = tagStr.trim().toUpperCase().replace(" ", "_");
-                                        Tag tag = Tag.valueOf(cleanTag);
-                                        tagText.append("#").append(tag.getKoreanLabel()).append(" ");
-                                    } catch (IllegalArgumentException e) {
-                                        tagText.append("#").append(tagStr.trim()).append(" ");
-                                    }
-                                }
-                            }
-
-                            intent.putExtra("cafe_id", cafeId);
-                            intent.putExtra("cafe_name", targetCafeName);
-                            intent.putExtra("cafe_address", address);
-                            intent.putExtra("cafe_reason", "전체 이용자 평점이 높은 인기 매장입니다 ✨");
-                            intent.putExtra("cafe_tags", tagText.toString());
-                        } else {
-                            intent.putExtra("cafe_id", "temp_id");
-                            intent.putExtra("cafe_name", targetCafeName);
-                            intent.putExtra("cafe_address", "주소 정보 없음");
-                            intent.putExtra("cafe_reason", "실시간 인기 카페");
-                            intent.putExtra("cafe_tags", "#카페 ");
-                        }
-
-                        startActivity(intent);
-                    }
-                });
+            List<Recommender.CafeModel> models = RecommendationLoader.models(cafes.getResult());
+            Map<String, CafeRatingStats> stats = new CafeIdentity(models)
+                    .aggregate(VisitRecordRepository.records(visits.getResult()));
+            List<Recommender.CafeModel> ranked = new ArrayList<>();
+            for (Recommender.CafeModel cafe : models) {
+                if (stats.containsKey(cafe.id)) ranked.add(cafe);
+            }
+            ranked.sort((a, b) -> Float.compare(stats.get(b.id).avgRating, stats.get(a.id).avgRating));
+            for (int i = 0; i < views.length; i++) {
+                if (i >= ranked.size()) {
+                    views[i].setText((i + 1) + ". 평점 데이터 없음");
+                    continue;
+                }
+                Recommender.CafeModel cafe = ranked.get(i);
+                views[i].setText(String.format(java.util.Locale.getDefault(),
+                        "%d. %s  ★%.1f", i + 1, cafe.name, stats.get(cafe.id).avgRating));
+                views[i].setOnClickListener(v -> queryCafeAndGoDetail(cafe.id, cafe.name));
+            }
+        });
     }
 
-    private void loadUserPreferencesFromFirestore(String uid) {
-        db.collection("users").document(uid)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        DocumentSnapshot document = task.getResult();
-                        selectedTags.clear();
-                        if (document.exists()) {
-                            addTagToList(document.getString("bean_tag"));
-                            addTagToList(document.getString("style_tag"));
-                            addTagToList(document.getString("size_tag"));
-                            addTagToList(document.getString("companion_tag"));
-                            addTagToList(document.getString("dessert_tag"));
-                            addTagToList(document.getString("specialty_tag"));
-                        }
-                        if (selectedTags.isEmpty()) {
-                            txtRecommendCafeName.setText("나만의 카페를 찾아보세요!");
-                            txtRecommendCafeDesc.setText("오른쪽 상단 메뉴에서 취향 설문을 시작해주세요.");
+    private void queryCafeAndGoDetail(String cafeId, String cafeName) {
+        if (CafeIdentity.hasId(cafeId)) {
+            db.collection("cafes").document(cafeId).get()
+                    .addOnSuccessListener(this::openCafeDetail)
+                    .addOnFailureListener(e -> Toast.makeText(this,
+                            "카페 정보를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show());
+        } else if (cafeName != null) {
+            db.collection("cafes").whereEqualTo("name", cafeName).limit(2).get()
+                    .addOnSuccessListener(snapshot -> {
+                        if (snapshot.size() == 1) {
+                            openCafeDetail(snapshot.getDocuments().get(0));
                         } else {
-                            requestCurrentLocation();
+                            Toast.makeText(this, "카페를 검색해 매장을 선택해주세요.", Toast.LENGTH_SHORT).show();
                         }
-                    } else {
-                        txtRecommendCafeName.setText("데이터 로드 실패");
-                        txtRecommendCafeDesc.setText("네트워크 상태를 확인해주세요 😢");
-                    }
-                });
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(this,
+                            "카페 정보를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show());
+        }
     }
 
-    private void addTagToList(String tagStr) {
-        if (tagStr != null && !tagStr.isEmpty()) {
-            try { selectedTags.add(Tag.valueOf(tagStr.trim().toUpperCase())); } catch (IllegalArgumentException e) {}
+    private void openCafeDetail(DocumentSnapshot document) {
+        if (isFinishing() || isDestroyed()) return;
+        if (!document.exists()) {
+            Toast.makeText(this, "카페 정보가 없습니다.", Toast.LENGTH_SHORT).show();
+            return;
         }
+        Recommender.CafeModel cafe = RecommendationLoader.model(document);
+        StringBuilder tags = new StringBuilder();
+        for (Tag tag : cafe.tags) tags.append("#").append(tag.getKoreanLabel()).append(" ");
+        Intent intent = new Intent(this, CafeDetailActivity.class);
+        intent.putExtra("cafe_id", cafe.id);
+        intent.putExtra("cafe_name", cafe.name);
+        intent.putExtra("cafe_address", cafe.address);
+        intent.putExtra("cafe_tags", tags.toString());
+        intent.putExtra("cafe_phone", document.getString("phone"));
+        startActivity(intent);
     }
 
     private void fetchCafesAndRecommendAfterLocation() {
-        db.collection("cafes")
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        List<Recommender.CafeModel> cafeModels = new ArrayList<>();
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            Cafe dbCafe = document.toObject(Cafe.class);
-                            dbCafe.setId(document.getId());
-                            List<Tag> enumTags = new ArrayList<>();
-                            if (dbCafe.getTags() != null) {
-                                for (String tagStr : dbCafe.getTags()) {
-                                    try { enumTags.add(Tag.valueOf(tagStr.trim().toUpperCase())); } catch (IllegalArgumentException e) {}
-                                }
-                            }
-                            Recommender.CafeModel model = new Recommender.CafeModel(
-                                    dbCafe.getId(), dbCafe.getName(), dbCafe.getAddress(),
-                                    enumTags.toArray(new Tag[0]), dbCafe.getLatitude(), dbCafe.getLongitude()
-                            );
-                            cafeModels.add(model);
-                        }
-                        List<Recommender.Recommendation> results =
-                                Recommender.recommend(cafeModels, selectedTags, currentLat, currentLng);
-                        RecommendCafeActivity.recommendationList = results;
-                        if (!results.isEmpty() && results.get(0).score > 0) {
-                            Recommender.Recommendation bestMatch = results.get(0);
-                            txtRecommendCafeName.setText(bestMatch.cafe.name + " ✨");
-                            txtRecommendCafeDesc.setText(bestMatch.cafe.address + "\n" + bestMatch.reason);
-                        } else {
-                            txtRecommendCafeName.setText("추천 카페가 없습니다.");
-                            txtRecommendCafeDesc.setText("조건에 맞는 카페를 찾지 못했어요 😢");
-                        }
-                    } else {
-                        Toast.makeText(MainActivity.this, "DB 연결 에러", Toast.LENGTH_SHORT).show();
-                    }
-                });
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+        String uid = user.getUid();
+        int request = ++recommendationRequest;
+        RecommendationLoader.load(this, uid).addOnCompleteListener(task -> {
+            if (isFinishing() || isDestroyed() || request != recommendationRequest
+                    || mAuth.getCurrentUser() == null
+                    || !uid.equals(mAuth.getCurrentUser().getUid())) return;
+            if (!task.isSuccessful()) {
+                txtRecommendCafeName.setText("추천을 불러오지 못했습니다.");
+                txtRecommendCafeDesc.setText("네트워크 상태를 확인하고 다시 시도해주세요.");
+                return;
+            }
+            RecommendationLoader.Result result = task.getResult();
+            if (!result.hasSurvey) {
+                txtRecommendCafeName.setText("나만의 카페를 찾아보세요!");
+                txtRecommendCafeDesc.setText("오른쪽 상단 메뉴에서 취향 설문을 시작해주세요.");
+            } else if (!result.recommendations.isEmpty()) {
+                Recommender.Recommendation best = result.recommendations.get(0);
+                txtRecommendCafeName.setText(best.cafe.name + " ✨");
+                txtRecommendCafeDesc.setText(best.cafe.address + "\n" + best.reason
+                        + (result.usedDefaultLocation ? "\n위치 확인 불가: 대전 궁동·어은동 기준" : ""));
+            } else {
+                txtRecommendCafeName.setText("추천 카페가 없습니다.");
+                txtRecommendCafeDesc.setText("등록된 카페 정보를 확인해주세요.");
+            }
+        });
     }
 
     private void requestCurrentLocation() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST);
-            return;
+        boolean fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        SharedPreferences permissionPrefs = getSharedPreferences("location_permission", MODE_PRIVATE);
+        if (!fine && !coarse && !permissionPrefs.getBoolean("requested", false)) {
+            permissionPrefs.edit().putBoolean("requested", true).apply();
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION_REQUEST);
+        } else {
+            fetchCafesAndRecommendAfterLocation();
         }
-        fusedLocationClient.getCurrentLocation(com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY, null)
-                .addOnSuccessListener(location -> {
-                    if (location != null) {
-                        currentLat = location.getLatitude();
-                        currentLng = location.getLongitude();
-                    }
-                    fetchCafesAndRecommendAfterLocation();
-                });
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                          @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_PERMISSION_REQUEST) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                requestCurrentLocation();
-            } else {
-                fetchCafesAndRecommendAfterLocation();
-            }
-        }
+        if (requestCode == LOCATION_PERMISSION_REQUEST) fetchCafesAndRecommendAfterLocation();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        recommendationRequest++;
     }
 
     private void setupClickListeners() {

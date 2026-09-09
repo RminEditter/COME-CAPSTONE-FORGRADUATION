@@ -253,6 +253,7 @@ public class CommunityActivity extends AppCompatActivity {
                             record.setId(
                                     document.getId()
                             );
+                            record.setCafeId(document.getString("cafeId"));
 
                             record.setUserUid(
                                     userUid

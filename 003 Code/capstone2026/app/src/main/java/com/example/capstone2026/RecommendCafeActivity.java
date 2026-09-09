@@ -3,7 +3,6 @@ package com.example.capstone2026;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
@@ -27,7 +26,10 @@ public class RecommendCafeActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private CafeAdapter adapter;
 
-    public static List<Recommender.Recommendation> recommendationList;
+    private List<Recommender.Recommendation> recommendationList = new ArrayList<>();
+    private int loadGeneration = 0;
+    private android.widget.TextView statusView;
+    private boolean defaultLocation;
 
     //  화면에 표시할 카페 리스트 및 평점 통계 맵을 멤버 변수로 승격하여 정렬 시 참조
     private List<Recommender.Recommendation> displayList = new ArrayList<>();
@@ -35,9 +37,6 @@ public class RecommendCafeActivity extends AppCompatActivity {
 
     // 개인화 추천용 태그 점수
     private Map<Tag, Integer> personalizationTagScores = new HashMap<>();
-
-    private boolean feedbackLoaded = false;
-    private boolean ratingPreferenceLoaded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,47 +49,79 @@ public class RecommendCafeActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerViewCafes);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        if (recommendationList == null || recommendationList.isEmpty()) {
-            Toast.makeText(this, "추천 카페 목록이 없습니다.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String searchQuery = getIntent().getStringExtra("SEARCH_QUERY");
-
-        displayList.clear();
-
-        if (!TextUtils.isEmpty(searchQuery)) {
-            //  Case 1: 검색어가 존재할 경우 -> 전체 추천 리스트 중 카페 이름에 검색어가 포함된 것만 필터링
-            String finalQuery = searchQuery.toLowerCase().trim();
-
-            for (Recommender.Recommendation rec : recommendationList) {
-                if (rec.cafe != null && rec.cafe.name != null) {
-                    if (rec.cafe.name.toLowerCase().contains(finalQuery)) {
-                        displayList.add(rec);
-                    }
-                }
-            }
-
-            if (displayList.isEmpty()) {
-                Toast.makeText(this, "'" + searchQuery + "' 검색 결과와 일치하는 카페가 없습니다.", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            //  Case 2: 검색어가 없을 경우 (일반 추천 진입) -> 추천 전체 목록 노출
-            displayList.addAll(recommendationList);
-        }
-
-        // 초기 어댑터 연결
+        statusView = findViewById(R.id.textRecommendationStatus);
+        statusView.setOnClickListener(v -> reloadRecommendations());
         adapter = new CafeAdapter(displayList);
         recyclerView.setAdapter(adapter);
-
-        // ChipGroup 정렬 리스너 설정
         setupSortChipGroup();
+    }
 
-        // Firestore 평점 통계 데이터 로드
-        loadRatingStats();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        reloadRecommendations();
+    }
 
-        // 개인화 추천 데이터 로드
-        loadPersonalizationData();
+    @Override
+    protected void onStop() {
+        super.onStop();
+        loadGeneration++;
+    }
+
+    private boolean isCurrentLoad(int generation, String uid) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        return !isFinishing() && !isDestroyed() && generation == loadGeneration
+                && user != null && uid.equals(user.getUid());
+    }
+
+    private void reloadRecommendations() {
+        int generation = ++loadGeneration;
+        recommendationList.clear();
+        displayList.clear();
+        ratingStatsMap.clear();
+        adapter.notifyDataSetChanged();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            statusView.setText("로그인 후 추천을 확인해주세요.");
+            return;
+        }
+        String uid = user.getUid();
+        statusView.setText("카페와 취향 정보를 불러오는 중...");
+        RecommendationLoader.load(this, uid).addOnCompleteListener(task -> {
+            if (!isCurrentLoad(generation, uid)) return;
+            if (!task.isSuccessful()) {
+                statusView.setText("추천을 불러오지 못했습니다. 여기를 눌러 다시 시도해주세요.");
+                return;
+            }
+            recommendationList = task.getResult().recommendations;
+            defaultLocation = task.getResult().usedDefaultLocation;
+            rebuildDisplayList();
+            applySelectedSort();
+            adapter.notifyDataSetChanged();
+            updateStatus();
+            loadPersonalizationData(generation, uid);
+        });
+    }
+
+    private void updateStatus() {
+        if (displayList.isEmpty()) {
+            statusView.setText(TextUtils.isEmpty(getIntent().getStringExtra("SEARCH_QUERY"))
+                    ? "등록된 카페가 없습니다. 눌러서 다시 불러오기"
+                    : "검색어와 일치하는 카페가 없습니다.");
+        } else {
+            statusView.setText(defaultLocation
+                    ? "위치 확인 불가: 대전 궁동·어은동을 기준으로 추천합니다."
+                    : "현재 위치와 저장된 취향을 기준으로 추천합니다.");
+        }
+    }
+
+    private void applySelectedSort() {
+        ChipGroup group = findViewById(R.id.chipGroupSort);
+        int checked = group.getCheckedChipId();
+        if (checked == R.id.chipSortDistance) sortRecommendationsByDistance();
+        else if (checked == R.id.chipSortRating) sortRecommendationsByRating();
+        else if (checked == R.id.chipSortReviews) sortRecommendationsByReviewCount();
+        else sortRecommendationsByScore();
     }
 
     private void setupBackButton() {
@@ -168,16 +199,16 @@ public class RecommendCafeActivity extends AppCompatActivity {
             float ratingA = 0.0f;
             float ratingB = 0.0f;
 
-            if (a.cafe != null && ratingStatsMap.containsKey(a.cafe.name)) {
-                CafeRatingStats statsA = ratingStatsMap.get(a.cafe.name);
+            if (a.cafe != null && ratingStatsMap.containsKey(a.cafe.id)) {
+                CafeRatingStats statsA = ratingStatsMap.get(a.cafe.id);
 
                 if (statsA != null) {
                     ratingA = statsA.avgRating;
                 }
             }
 
-            if (b.cafe != null && ratingStatsMap.containsKey(b.cafe.name)) {
-                CafeRatingStats statsB = ratingStatsMap.get(b.cafe.name);
+            if (b.cafe != null && ratingStatsMap.containsKey(b.cafe.id)) {
+                CafeRatingStats statsB = ratingStatsMap.get(b.cafe.id);
 
                 if (statsB != null) {
                     ratingB = statsB.avgRating;
@@ -208,16 +239,16 @@ public class RecommendCafeActivity extends AppCompatActivity {
             int reviewCountA = 0;
             int reviewCountB = 0;
 
-            if (a.cafe != null && ratingStatsMap.containsKey(a.cafe.name)) {
-                CafeRatingStats statsA = ratingStatsMap.get(a.cafe.name);
+            if (a.cafe != null && ratingStatsMap.containsKey(a.cafe.id)) {
+                CafeRatingStats statsA = ratingStatsMap.get(a.cafe.id);
 
                 if (statsA != null) {
                     reviewCountA = statsA.visitCount;
                 }
             }
 
-            if (b.cafe != null && ratingStatsMap.containsKey(b.cafe.name)) {
-                CafeRatingStats statsB = ratingStatsMap.get(b.cafe.name);
+            if (b.cafe != null && ratingStatsMap.containsKey(b.cafe.id)) {
+                CafeRatingStats statsB = ratingStatsMap.get(b.cafe.id);
 
                 if (statsB != null) {
                     reviewCountB = statsB.visitCount;
@@ -236,16 +267,16 @@ public class RecommendCafeActivity extends AppCompatActivity {
             float ratingA = 0.0f;
             float ratingB = 0.0f;
 
-            if (a.cafe != null && ratingStatsMap.containsKey(a.cafe.name)) {
-                CafeRatingStats statsA = ratingStatsMap.get(a.cafe.name);
+            if (a.cafe != null && ratingStatsMap.containsKey(a.cafe.id)) {
+                CafeRatingStats statsA = ratingStatsMap.get(a.cafe.id);
 
                 if (statsA != null) {
                     ratingA = statsA.avgRating;
                 }
             }
 
-            if (b.cafe != null && ratingStatsMap.containsKey(b.cafe.name)) {
-                CafeRatingStats statsB = ratingStatsMap.get(b.cafe.name);
+            if (b.cafe != null && ratingStatsMap.containsKey(b.cafe.id)) {
+                CafeRatingStats statsB = ratingStatsMap.get(b.cafe.id);
 
                 if (statsB != null) {
                     ratingB = statsB.avgRating;
@@ -267,210 +298,56 @@ public class RecommendCafeActivity extends AppCompatActivity {
         });
     }
 
-    private void loadRatingStats() {
-        FirebaseFirestore.getInstance().collection("visit_records")
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        ratingStatsMap.clear();
-
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            String cafeName = document.getString("cafeName");
-                            Double ratingDouble = document.getDouble("rating");
-                            float rating = ratingDouble != null ? ratingDouble.floatValue() : 0.0f;
-
-                            if (cafeName == null) {
-                                continue;
-                            }
-
-                            if (ratingStatsMap.containsKey(cafeName)) {
-                                CafeRatingStats stats = ratingStatsMap.get(cafeName);
-
-                                if (stats != null) {
-                                    float totalRating = (stats.avgRating * stats.visitCount) + rating;
-                                    stats.visitCount += 1;
-                                    stats.avgRating = totalRating / stats.visitCount;
-                                }
-                            } else {
-                                CafeRatingStats stats = new CafeRatingStats();
-                                stats.cafeName = cafeName;
-                                stats.avgRating = rating;
-                                stats.visitCount = 1;
-                                ratingStatsMap.put(cafeName, stats);
-                            }
-                        }
-
-                        if (adapter != null) {
-                            adapter.setRatingStatsMap(ratingStatsMap);
-                        }
-                    } else {
-                        Toast.makeText(this, "통계 데이터 로드 실패", Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-
-    // 개인화 추천 데이터 로드
-    private void loadPersonalizationData() {
-
+    private void loadPersonalizationData(int generation, String uid) {
         personalizationTagScores.clear();
-
-        // 즐겨찾기 데이터는 로컬에서 바로 반영
-        applyFavoritePreferences();
-
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (currentUser == null) {
-            feedbackLoaded = true;
-            ratingPreferenceLoaded = true;
-            applyPersonalizationIfReady();
-            return;
-        }
-
-        String uid = currentUser.getUid();
-
-        loadRecommendationFeedback(uid);
-        loadMyRatingPreferences(uid);
-    }
-
-    // 즐겨찾기한 카페의 태그를 선호 태그로 반영
-    private void applyFavoritePreferences() {
-
-        SharedPreferences prefs = getSharedPreferences(
-                "CafeFitFavorites",
-                MODE_PRIVATE
-        );
-
-        if (recommendationList == null) {
-            return;
-        }
-
+        SharedPreferences favorites = AccountPreferences.open(this, "CafeFitFavorites");
+        List<Recommender.CafeModel> cafes = new ArrayList<>();
         for (Recommender.Recommendation recommendation : recommendationList) {
-
-            if (recommendation == null ||
-                    recommendation.cafe == null ||
-                    recommendation.cafe.id == null) {
-                continue;
+            cafes.add(recommendation.cafe);
+            if (favorites.getBoolean(recommendation.cafe.id, false)) {
+                addCafeTagsToPersonalizationScore(recommendation.cafe, 1);
             }
-
-            boolean isFavorite = prefs.getBoolean(
-                    recommendation.cafe.id,
-                    false
-            );
-
-            if (!isFavorite) {
-                continue;
-            }
-
-            addCafeTagsToPersonalizationScore(
-                    recommendation.cafe,
-                    1
-            );
         }
+        CafeIdentity identity = new CafeIdentity(cafes);
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> visits =
+                db.collection("visit_records").get();
+        com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> feedback =
+                db.collection("recommendation_feedback").whereEqualTo("userUid", uid).get();
+        com.google.android.gms.tasks.Tasks.whenAll(visits, feedback).addOnCompleteListener(done -> {
+            if (!isCurrentLoad(generation, uid)) return;
+            if (visits.isSuccessful()) {
+                List<VisitRecord> records = VisitRecordRepository.records(visits.getResult());
+                ratingStatsMap = identity.aggregate(records);
+                adapter.setRatingStatsMap(ratingStatsMap);
+                for (VisitRecord record : records) {
+                    if (!uid.equals(record.getUserUid())) continue;
+                    Recommender.CafeModel cafe = findCafeById(
+                            identity.resolve(record.getCafeId(), record.getCafeName()));
+                    if (cafe == null) continue;
+                    if (record.getRating() >= 4) addCafeTagsToPersonalizationScore(cafe, 1);
+                    else if (record.getRating() <= 2) addCafeTagsToPersonalizationScore(cafe, -1);
+                }
+            }
+            if (feedback.isSuccessful()) {
+                for (QueryDocumentSnapshot document : feedback.getResult()) {
+                    Recommender.CafeModel cafe = findCafeById(document.getString("cafeId"));
+                    if (cafe == null) continue;
+                    String value = document.getString("feedback");
+                    if ("LIKE".equals(value)) addCafeTagsToPersonalizationScore(cafe, 1);
+                    else if ("DISLIKE".equals(value)) addCafeTagsToPersonalizationScore(cafe, -1);
+                }
+            }
+            Recommender.applyFeedbackScores(recommendationList, personalizationTagScores);
+            rebuildDisplayList();
+            applySelectedSort();
+            adapter.notifyDataSetChanged();
+            if (!visits.isSuccessful() || !feedback.isSuccessful()) {
+                statusView.setText("일부 평점·피드백을 불러오지 못했습니다. 눌러서 다시 시도해주세요.");
+            }
+        });
     }
 
-    // 추천 정확도 피드백 데이터를 불러와 개인화 점수에 반영
-    private void loadRecommendationFeedback(String uid) {
-
-        FirebaseFirestore.getInstance()
-                .collection("recommendation_feedback")
-                .whereEqualTo("userUid", uid)
-                .get()
-                .addOnCompleteListener(task -> {
-
-                    if (task.isSuccessful() && task.getResult() != null) {
-
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-
-                            String cafeId = document.getString("cafeId");
-                            String feedback = document.getString("feedback");
-
-                            if (cafeId == null || feedback == null) {
-                                continue;
-                            }
-
-                            Recommender.CafeModel cafe =
-                                    findCafeById(cafeId);
-
-                            if (cafe == null) {
-                                continue;
-                            }
-
-                            if ("LIKE".equals(feedback)) {
-
-                                addCafeTagsToPersonalizationScore(
-                                        cafe,
-                                        1
-                                );
-
-                            } else if ("DISLIKE".equals(feedback)) {
-
-                                addCafeTagsToPersonalizationScore(
-                                        cafe,
-                                        -1
-                                );
-                            }
-                        }
-                    }
-
-                    feedbackLoaded = true;
-                    applyPersonalizationIfReady();
-                });
-    }
-
-    // 현재 로그인 사용자의 과거 별점을 불러와 개인화 점수에 반영
-    private void loadMyRatingPreferences(String uid) {
-
-        FirebaseFirestore.getInstance()
-                .collection("visit_records")
-                .whereEqualTo("userUid", uid)
-                .get()
-                .addOnCompleteListener(task -> {
-
-                    if (task.isSuccessful() && task.getResult() != null) {
-
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-
-                            String cafeName = document.getString("cafeName");
-                            Double ratingDouble = document.getDouble("rating");
-
-                            if (cafeName == null || ratingDouble == null) {
-                                continue;
-                            }
-
-                            float rating = ratingDouble.floatValue();
-
-                            Recommender.CafeModel cafe =
-                                    findCafeByName(cafeName);
-
-                            if (cafe == null) {
-                                continue;
-                            }
-
-                            // 4점 이상은 사용자가 선호한 카페로 판단
-                            if (rating >= 4.0f) {
-
-                                addCafeTagsToPersonalizationScore(
-                                        cafe,
-                                        1
-                                );
-
-                                // 2점 이하는 사용자가 선호하지 않은 카페로 판단
-                            } else if (rating <= 2.0f) {
-
-                                addCafeTagsToPersonalizationScore(
-                                        cafe,
-                                        -1
-                                );
-                            }
-                        }
-                    }
-
-                    ratingPreferenceLoaded = true;
-                    applyPersonalizationIfReady();
-                });
-    }
-
-    // 카페가 가진 태그 전체에 개인화 선호 점수를 누적
     private void addCafeTagsToPersonalizationScore(
             Recommender.CafeModel cafe,
             int value
@@ -501,27 +378,6 @@ public class RecommendCafeActivity extends AppCompatActivity {
                     tag,
                     currentScore + value
             );
-        }
-    }
-
-    // 추천 피드백과 별점 데이터를 모두 읽은 뒤 실제 추천 점수에 반영
-    private void applyPersonalizationIfReady() {
-
-        if (!feedbackLoaded || !ratingPreferenceLoaded) {
-            return;
-        }
-
-        Recommender.applyFeedbackScores(
-                recommendationList,
-                personalizationTagScores
-        );
-
-        rebuildDisplayList();
-
-        sortRecommendationsByScore();
-
-        if (adapter != null) {
-            adapter.notifyDataSetChanged();
         }
     }
 
@@ -581,27 +437,4 @@ public class RecommendCafeActivity extends AppCompatActivity {
         return null;
     }
 
-    private Recommender.CafeModel findCafeByName(String cafeName) {
-
-        if (recommendationList == null ||
-                cafeName == null) {
-            return null;
-        }
-
-        for (Recommender.Recommendation recommendation :
-                recommendationList) {
-
-            if (recommendation == null ||
-                    recommendation.cafe == null ||
-                    recommendation.cafe.name == null) {
-                continue;
-            }
-
-            if (cafeName.equals(recommendation.cafe.name)) {
-                return recommendation.cafe;
-            }
-        }
-
-        return null;
-    }
 }

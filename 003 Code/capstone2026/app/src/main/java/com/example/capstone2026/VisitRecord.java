@@ -4,6 +4,7 @@ public class VisitRecord {
 
     private String id; // Firestore 문서 고유 ID
     private String cafeName;
+    private String cafeId;
     private float rating;
     private String memo;
     private long visitedAt;
@@ -25,6 +26,9 @@ public class VisitRecord {
 
     public String getCafeName() { return cafeName; }
     public void setCafeName(String cafeName) { this.cafeName = cafeName; }
+
+    public String getCafeId() { return cafeId; }
+    public void setCafeId(String cafeId) { this.cafeId = cafeId; }
 
     public float getRating() { return rating; }
     public void setRating(float rating) { this.rating = rating; }

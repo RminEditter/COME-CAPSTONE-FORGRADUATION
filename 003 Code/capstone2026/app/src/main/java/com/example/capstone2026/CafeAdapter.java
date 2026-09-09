@@ -64,7 +64,9 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         holder.tvReason.setText(result.reason);
         holder.tvMatch.setText("추천 점수: " + result.score + "점");
 
-        if (result.distanceMeters >= 1000) {
+        if (!Double.isFinite(result.distanceMeters)) {
+            holder.tvDistance.setText("거리 정보 없음");
+        } else if (result.distanceMeters >= 1000) {
             holder.tvDistance.setText(
                     String.format("약 %.1fkm", result.distanceMeters / 1000.0)
             );
@@ -72,7 +74,7 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
             holder.tvDistance.setText("약 " + (int) result.distanceMeters + "m");
         }
 
-        CafeRatingStats stats = ratingStatsMap.get(result.cafe.name);
+        CafeRatingStats stats = ratingStatsMap.get(result.cafe.id);
 
         if (stats != null) {
             // 💡 [2번 기준 텍스트 매칭] 평균값 기준이므로 '내 평점'으로 유지하되 가시성을 높였습니다.
@@ -147,13 +149,6 @@ public class CafeAdapter extends RecyclerView.Adapter<CafeAdapter.ViewHolder> {
         // 💡 카드 클릭 시 사용자가 선택한 카페 이름을 '최근 본 카페'로 실시간 영구 저장!
         holder.itemView.setOnClickListener(v -> {
             Context context = v.getContext();
-
-            if (result.cafe != null && result.cafe.name != null) {
-                context.getSharedPreferences("CafeFitRecent", Context.MODE_PRIVATE)
-                        .edit()
-                        .putString("recentCafe", result.cafe.name)
-                        .apply();
-            }
 
             Intent intent = new Intent(context, CafeDetailActivity.class);
 

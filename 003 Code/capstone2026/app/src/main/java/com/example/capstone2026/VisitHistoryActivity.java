@@ -115,6 +115,7 @@ public class VisitHistoryActivity extends AppCompatActivity {
                                     );
 
                             record.setId(document.getId());
+                            record.setCafeId(document.getString("cafeId"));
                             record.setUserUid(uid);
 
                             records.add(record);

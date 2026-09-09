@@ -48,6 +48,22 @@ public class Recommender {
             double userLat,
             double userLng
     ) {
+        return recommend(allCafes, userTags, priorityTag, userLat, userLng,
+                (lat1, lng1, lat2, lng2) -> {
+                    float[] distance = new float[1];
+                    Location.distanceBetween(lat1, lng1, lat2, lng2, distance);
+                    return distance[0];
+                });
+    }
+
+    interface DistanceCalculator {
+        double meters(double lat1, double lng1, double lat2, double lng2);
+    }
+
+    // Distance is injectable so ranking and priority behavior can be tested on the JVM.
+    static List<Recommendation> recommend(List<CafeModel> allCafes, List<Tag> userTags,
+                                          Tag priorityTag, double userLat, double userLng,
+                                          DistanceCalculator distanceCalculator) {
         List<Recommendation> results = new ArrayList<>();
 
         if (allCafes == null || allCafes.isEmpty()) {
@@ -57,8 +73,10 @@ public class Recommender {
         if (userTags == null) {
             userTags = new ArrayList<>();
         }
+        userTags = new ArrayList<>(new java.util.LinkedHashSet<>(userTags));
 
         for (CafeModel cafe : allCafes) {
+            if (cafe == null) continue;
             int finalScore = 0;
             int weightedScore = 0;
             int maxScore = 0;
@@ -77,7 +95,7 @@ public class Recommender {
                 }
             }
 
-            // 2. 기본 매칭 점수 계산 (최대 80점 비중 할당)
+            // 2. 기본 매칭 점수 계산 (최대 85점)
             double matchRatio = 0.0;
             if (maxScore > 0) {
                 matchRatio = (double) weightedScore / maxScore;
@@ -90,15 +108,9 @@ public class Recommender {
             }
 
             // 3. 거리 계산 (위도/경도)
-            float[] distanceResult = new float[1];
-            Location.distanceBetween(
-                    userLat,
-                    userLng,
-                    cafe.lat,
-                    cafe.lng,
-                    distanceResult
-            );
-            double distanceMeters = distanceResult[0];
+            double distanceMeters = validCoordinates(cafe.lat, cafe.lng)
+                    ? distanceCalculator.meters(userLat, userLng, cafe.lat, cafe.lng)
+                    : Double.POSITIVE_INFINITY;
 
             // 4. 거리 보너스 점수 계산 (최대 15점 비중 할당)
             int distanceBonus = getDistanceBonus(distanceMeters);
@@ -287,6 +299,7 @@ public class Recommender {
     }
 
     private static int getDistanceBonus(double distanceMeters) {
+        if (!Double.isFinite(distanceMeters)) return 0;
         if (distanceMeters <= 500) { // 500m 이내
             return 15;
         } else if (distanceMeters <= 1000) { // 1km 이내
@@ -298,5 +311,11 @@ public class Recommender {
         } else {
             return 2;
         }
+    }
+
+    private static boolean validCoordinates(double lat, double lng) {
+        return Double.isFinite(lat) && Double.isFinite(lng)
+                && Math.abs(lat) <= 90 && Math.abs(lng) <= 180
+                && !(lat == 0 && lng == 0);
     }
 }

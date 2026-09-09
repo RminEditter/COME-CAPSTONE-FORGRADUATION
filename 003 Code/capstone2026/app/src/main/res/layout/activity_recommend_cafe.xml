@@ -71,6 +71,16 @@
 
     </com.google.android.material.chip.ChipGroup>
 
+    <TextView
+        android:id="@+id/textRecommendationStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:gravity="center_vertical"
+        android:paddingBottom="8dp"
+        android:textColor="@color/brown_dark"
+        android:textSize="14sp" />
+
     <!-- 카페 추천 리스트 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewCafes"

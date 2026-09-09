@@ -34,6 +34,7 @@
         <activity android:name=".SurveyActivity" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".ProfileActivity" android:exported="false" />
+        <activity android:name=".ProfileEditActivity" android:exported="false" />
         <activity android:name=".RecommendCafeActivity" android:exported="false" />
         <activity android:name=".VisitRecordActivity" android:exported="false" />
         <activity android:name=".CafeDetailActivity" />

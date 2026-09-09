@@ -106,6 +106,7 @@ public class VisitHistoryAdapter extends RecyclerView.Adapter<VisitHistoryAdapte
             intent.putExtra("mode", "edit");
             intent.putExtra("id", record.getFbId());
             intent.putExtra("cafeName", record.getCafeName());
+            intent.putExtra("cafeId", record.getCafeId());
             intent.putExtra("rating", record.getRating());
             intent.putExtra("memo", record.getMemo());
             intent.putExtra("visitedAt", record.getVisitedAt());

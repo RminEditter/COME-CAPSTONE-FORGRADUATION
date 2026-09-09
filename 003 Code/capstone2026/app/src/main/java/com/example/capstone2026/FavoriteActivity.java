@@ -23,14 +23,22 @@ public class FavoriteActivity extends AppCompatActivity {
         rvFavorites = findViewById(R.id.rvFavorites);
         rvFavorites.setLayoutManager(new LinearLayoutManager(this));
 
-        loadFavorites();
+
 
         adapter = new FavoriteAdapter(favoriteList);
         rvFavorites.setAdapter(adapter);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        favoriteList.clear();
+        loadFavorites();
+        adapter.notifyDataSetChanged();
+    }
+
     private void loadFavorites() {
-        SharedPreferences prefs = getSharedPreferences("CafeFitFavorites", MODE_PRIVATE);
+        SharedPreferences prefs = AccountPreferences.open(this, "CafeFitFavorites");
         Map<String, ?> all = prefs.getAll();
 
         for (String key : all.keySet()) {

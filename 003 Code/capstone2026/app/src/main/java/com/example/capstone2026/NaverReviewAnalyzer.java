@@ -17,14 +17,22 @@ public class NaverReviewAnalyzer {
     }
 
     public static void analyzeCafe(String cafeName, String address, AnalysisCallback callback) {
+        if (CLIENT_ID.isEmpty() || CLIENT_SECRET.isEmpty()
+                || cafeName == null || cafeName.trim().isEmpty()) {
+            callback.onComplete(new ArrayList<>());
+            return;
+        }
         OkHttpClient client = new OkHttpClient();
 
-        String[] addrParts = address.split(" ");
+        String[] addrParts = address == null ? new String[0] : address.trim().split("\\s+");
         String dongName = (addrParts.length > 2) ? addrParts[2] : "";
         String query = dongName + " " + cafeName + " 후기";
 
         Request request = new Request.Builder()
-                .url("https://openapi.naver.com/v1/search/blog.json?display=10&query=" + query)
+                .url(new HttpUrl.Builder().scheme("https").host("openapi.naver.com")
+                        .addPathSegments("v1/search/blog.json")
+                        .addQueryParameter("display", "10")
+                        .addQueryParameter("query", query).build())
                 .addHeader("X-Naver-Client-Id", CLIENT_ID)
                 .addHeader("X-Naver-Client-Secret", CLIENT_SECRET)
                 .build();
@@ -32,14 +40,17 @@ public class NaverReviewAnalyzer {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful() && response.body() != null) {
-                    String jsonData = response.body().string();
-                    List<Tag> tags = parseTagsFromRespones(jsonData);
-                    callback.onComplete(tags);
-                } else {
-                    android.util.Log.e("CafeFit_API", "API 응답 실패: " + response.code() + " / " + response.message());
-                    callback.onComplete(new ArrayList<>());
+                List<Tag> tags = new ArrayList<>();
+                try (Response closedResponse = response) {
+                    if (closedResponse.isSuccessful() && closedResponse.body() != null) {
+                        tags = parseTagsFromRespones(closedResponse.body().string());
+                    } else {
+                        android.util.Log.e("CafeFit_API", "API 응답 실패: " + closedResponse.code());
+                    }
+                } catch (IOException e) {
+                    android.util.Log.e("CafeFit_API", "API 응답 읽기 실패", e);
                 }
+                callback.onComplete(tags);
             }
 
             @Override

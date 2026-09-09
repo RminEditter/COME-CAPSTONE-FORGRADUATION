@@ -1,9 +1,7 @@
 package com.example.capstone2026;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,9 +26,7 @@ import com.google.firebase.firestore.SetOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 public class SurveyActivity extends AppCompatActivity {
 
@@ -221,28 +217,7 @@ public class SurveyActivity extends AppCompatActivity {
             }
         }
 
-        // 💡 1. 로컬 SharedPreferences 저장 (빠른 화면 전환 및 전달용)
-        saveSurveyToLocal(selectedTags, priorityTag);
-
-        // 💡 2. 파이어베이스 Firestore DB 원상복구 적재 (계정별 데이터 보존용)
         saveSurveyToFirestore(selectedTags, priorityTag);
-
-        // 💡 3. 추천 액티비티로 이동
-        Intent intent = new Intent(SurveyActivity.this, RecommendCafeActivity.class);
-        intent.putStringArrayListExtra("user_tags", selectedTags);
-        intent.putExtra("priority_tag", priorityTag);
-        startActivity(intent);
-        finish(); // 설문 완료 후 뒤로가기로 돌아오지 못하게 finish 처리
-    }
-
-    private void saveSurvey(ArrayList<String> tags, String priority) {
-        Set<String> tagSet = new HashSet<>(tags);
-
-        SharedPreferences prefs = getSharedPreferences("survey", MODE_PRIVATE);
-        prefs.edit()
-                .putStringSet("user_tags", tagSet)
-                .putString("priority_tag", priority)
-                .apply();
     }
 
     static class Option {
@@ -429,35 +404,35 @@ public class SurveyActivity extends AppCompatActivity {
         }
     }
 
-    private void saveSurveyToLocal(ArrayList<String> tags, String priority) {
-        Set<String> tagSet = new HashSet<>(tags);
-
-        SharedPreferences prefs = getSharedPreferences("survey", MODE_PRIVATE);
-        prefs.edit()
-                .putStringSet("user_tags", tagSet)
-                .putString("priority_tag", priority)
-                .apply();
-    }
-
     private void saveSurveyToFirestore(ArrayList<String> tags, String priority) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-
-        // 로그인된 유저가 존재할 때만 Firestore에 저장
-        if (currentUser != null) {
-            String uid = currentUser.getUid();
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-            Map<String, Object> surveyData = new HashMap<>();
-            surveyData.put("user_tags", tags);
-            surveyData.put("priority_tag", priority);
-
-            // users 컬렉션의 내 uid 문서에 태그 업데이트 (SetOptions.merge()로 기존 유저 정보 유지)
-            db.collection("users").document(uid)
-                    .set(surveyData, SetOptions.merge())
-                    .addOnSuccessListener(aVoid -> Log.d("SURVEY_DB", "Firestore 설문 저장 성공"))
-                    .addOnFailureListener(e -> Log.e("SURVEY_DB", "Firestore 설문 저장 실패", e));
-        } else {
-            Log.w("SURVEY_DB", "로그인된 유저가 없어 Firestore에 저장하지 못했습니다.");
+        if (currentUser == null) {
+            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show();
+            return;
         }
+        String uid = currentUser.getUid();
+        Map<String, Object> surveyData = new HashMap<>();
+        surveyData.put("user_tags", new ArrayList<>(new java.util.LinkedHashSet<>(tags)));
+        surveyData.put("priority_tag", priority);
+        btnNext.setEnabled(false);
+        btnPrev.setEnabled(false);
+        btnCloseSurvey.setEnabled(false);
+        FirebaseFirestore.getInstance().collection("users").document(uid)
+                .set(surveyData, SetOptions.merge())
+                .addOnCompleteListener(task -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    btnNext.setEnabled(true);
+                    btnPrev.setEnabled(true);
+                    btnCloseSurvey.setEnabled(true);
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    if (user == null || !uid.equals(user.getUid())) return;
+                    if (!task.isSuccessful()) {
+                        Toast.makeText(this, "설문 저장에 실패했습니다. 다시 시도해주세요.",
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    startActivity(new Intent(this, RecommendCafeActivity.class));
+                    finish();
+                });
     }
 }
