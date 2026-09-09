@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bottomNavBar" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:orientation="horizontal"
+    android:gravity="center" android:baselineAligned="false"
+    android:background="@color/ivory_bg" android:elevation="10dp" android:padding="8dp">
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnNavMap"
+        style="@style/ProfileNavigation" android:text="@string/profile_nav_map"/>
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnNavMain"
+        style="@style/ProfileNavigation" android:text="@string/profile_nav_main"/>
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnNavCommunity"
+        style="@style/ProfileNavigation" android:text="@string/profile_nav_community"/>
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnNavProfile"
+        style="@style/ProfileNavigation" android:text="@string/profile_nav_profile"/>
+</LinearLayout>

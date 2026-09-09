@@ -1,0 +1,126 @@
+<resources>
+    <color name="profile_muted">#77685C</color>
+    <string name="profile_title">마이페이지</string>
+    <string name="profile_nav_map">지도</string>
+    <string name="profile_nav_main">메인</string>
+    <string name="profile_nav_community">커뮤니티</string>
+    <string name="profile_nav_profile">프로필</string>
+    <style name="ProfileNavigation" parent="Widget.AppCompat.Button">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">4dp</item>
+        <item name="android:layout_marginEnd">4dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:padding">4dp</item>
+        <item name="android:background">@drawable/rounded_brown_button</item>
+        <item name="backgroundTint">@color/brown_main</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+    <string name="profile_current_tab">프로필, 현재 선택된 탭</string>
+    <string name="profile_stat_description">%1$s %2$s, 목록 보기</string>
+    <string name="profile_count_unknown">조회 전</string>
+    <string name="profile_taste_failed">취향 정보를 불러오지 못했어요.</string>
+    <string name="profile_saving">변경사항을 저장하고 있어요.</string>
+    <string name="profile_intro">나의 취향이 쌓이는 공간</string>
+    <string name="profile_default_name">카페 탐험가</string>
+    <string name="profile_edit">프로필 편집</string>
+    <string name="profile_identity">나만의 카페 여정을 기록해보세요.</string>
+    <string name="profile_activity">나의 활동</string>
+    <string name="profile_visits">방문 기록</string>
+    <string name="profile_favorites">즐겨찾기</string>
+    <string name="profile_badges">획득 배지</string>
+    <string name="profile_unknown">—</string>
+    <string name="profile_taste">내 카페 취향</string>
+    <string name="profile_taste_description">추천에 반영되는 나의 선택이에요.</string>
+    <string name="profile_no_survey">아직 저장된 취향이 없어요. 설문으로 좋아하는 카페를 찾아보세요.</string>
+    <string name="profile_priority">가장 중요한 조건 · %1$s</string>
+    <string name="profile_no_priority">우선순위가 아직 설정되지 않았어요.</string>
+    <string name="profile_survey">취향 다시 설정하기</string>
+    <string name="profile_start_survey">내 취향 찾아보기</string>
+    <string name="profile_records">나의 카페 기록</string>
+    <string name="profile_history_link">방문 기록 전체 보기  →</string>
+    <string name="profile_favorites_link">즐겨찾는 카페 보기  →</string>
+    <string name="profile_badges_link">내 배지 둘러보기  →</string>
+    <string name="profile_history_hint">다녀온 카페와 내가 남긴 별점을 확인해보세요.</string>
+    <string name="profile_settings">계정 관리</string>
+    <string name="profile_logout">로그아웃</string>
+    <string name="profile_loading">나의 기록을 불러오는 중이에요.</string>
+    <string name="profile_load_failed">일부 정보를 불러오지 못했어요. 다시 시도해주세요.</string>
+    <string name="profile_retry">다시 불러오기</string>
+    <string name="profile_login_required">로그인이 필요합니다.</string>
+    <string name="profile_back">뒤로가기</string>
+    <string name="profile_nickname">닉네임</string>
+    <string name="profile_nickname_hint">닉네임을 입력해주세요</string>
+    <string name="profile_gender">성별</string>
+    <string name="profile_age">나이대</string>
+    <string name="profile_save">변경사항 저장하기</string>
+    <string name="profile_saved">프로필을 저장했습니다.</string>
+    <string name="profile_save_failed">저장하지 못했습니다. 다시 시도해주세요.</string>
+    <string name="profile_nickname_invalid">닉네임을 1~20자로 입력해주세요.</string>
+    <string name="profile_edit_description">카페에서 사용할 나의 이름을 정해보세요.</string>
+    <string-array name="profile_gender_options"><item>선택 안 함</item><item>여성</item><item>남성</item></string-array>
+    <string-array name="profile_age_options"><item>선택 안 함</item><item>10대</item><item>20대</item><item>30대</item><item>40대 이상</item></string-array>
+    <style name="ProfileCard">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">16dp</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">@drawable/bg_home_card</item>
+        <item name="android:padding">20dp</item>
+    </style>
+    <style name="ProfileSectionTitle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/brown_dark</item>
+        <item name="android:tag">profile_heading</item>
+    </style>
+    <style name="ProfileDescription">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/profile_muted</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+    </style>
+    <style name="ProfileAction" parent="Widget.AppCompat.Button">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:background">@drawable/rounded_beige_button</item>
+        <item name="backgroundTint">@color/beige_soft</item>
+        <item name="android:textColor">@color/brown_dark</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+    </style>
+    <style name="ProfileStat">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:minHeight">88dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+    </style>
+    <style name="ProfileStatValue">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/brown_main</item>
+        <item name="android:text">@string/profile_unknown</item>
+    </style>
+</resources>
