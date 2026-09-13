@@ -1,0 +1,61 @@
+<resources>
+    <color name="home_muted">#75685D</color>
+    <string name="home_greeting">오늘은 어떤 카페에 가볼까요?</string>
+    <string name="home_search">카페 이름으로 검색</string>
+    <string name="home_taste">오늘의 카페 취향</string>
+    <string name="home_study">공부하기</string>
+    <string name="home_date">데이트</string>
+    <string name="home_solo">혼자 쉬기</string>
+    <string name="home_for_you">당신을 위한 카페</string>
+    <string name="home_edit_taste">취향 수정</string>
+    <string name="home_recommend_label">취향에 맞는 추천</string>
+    <string name="home_loading">취향에 맞는 카페를 찾고 있어요</string>
+    <string name="home_detail">카페 자세히 보기</string>
+    <string name="home_map">지도 보기</string>
+    <string name="home_recent">최근 본 카페</string>
+    <string name="home_recent_empty">최근 본 카페가 아직 없어요</string>
+    <string name="home_recent_hint">마음에 드는 카페를 먼저 둘러보세요.</string>
+    <string name="home_top">좋은 평가를 받은 카페</string>
+    <string name="home_all">추천 전체 보기</string>
+    <string name="home_photo_empty">카페 사진을 준비하고 있어요</string>
+    <string name="home_menu">메뉴 열기</string>
+    <string name="home_bookmark">즐겨찾기 추가</string>
+    <style name="HomeHeading">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/brown_dark</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:tag">profile_heading</item>
+    </style>
+    <style name="HomeBody">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/home_muted</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+    </style>
+    <style name="HomeAction">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:minWidth">48dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/brown_dark</item>
+        <item name="android:background">@drawable/rounded_beige_button</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:backgroundTint">@null</item>
+    </style>
+    <style name="HomeNav" parent="HomeAction">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:padding">4dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:drawablePadding">4dp</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+    </style>
+</resources>

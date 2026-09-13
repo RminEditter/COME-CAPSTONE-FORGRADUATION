@@ -1,0 +1,8 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="horizontal" android:padding="8dp" android:background="@color/ivory_bg">
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnNavMap" style="@style/HomeNav" android:text="지도" android:drawableTop="@drawable/ic_home_pin" />
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnNavMain" style="@style/HomeNav" android:text="메인" android:drawableTop="@drawable/ic_home_house" android:background="@drawable/rounded_beige_button" />
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnNavCommunity" style="@style/HomeNav" android:text="커뮤니티" android:drawableTop="@drawable/ic_home_chat" />
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnNavProfile" style="@style/HomeNav" android:text="프로필" android:drawableTop="@drawable/ic_home_person" />
+</LinearLayout>

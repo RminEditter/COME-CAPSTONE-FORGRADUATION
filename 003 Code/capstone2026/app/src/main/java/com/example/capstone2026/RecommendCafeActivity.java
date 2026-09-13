@@ -87,7 +87,8 @@ public class RecommendCafeActivity extends AppCompatActivity {
         }
         String uid = user.getUid();
         statusView.setText("카페와 취향 정보를 불러오는 중...");
-        RecommendationLoader.load(this, uid).addOnCompleteListener(task -> {
+        RecommendationLoader.load(this, uid,
+                HomeSituation.parse(getIntent().getStringExtra("HOME_SITUATION"))).addOnCompleteListener(task -> {
             if (!isCurrentLoad(generation, uid)) return;
             if (!task.isSuccessful()) {
                 statusView.setText("추천을 불러오지 못했습니다. 여기를 눌러 다시 시도해주세요.");
@@ -104,14 +105,15 @@ public class RecommendCafeActivity extends AppCompatActivity {
     }
 
     private void updateStatus() {
+        HomeSituation situation = HomeSituation.parse(getIntent().getStringExtra("HOME_SITUATION"));
         if (displayList.isEmpty()) {
             statusView.setText(TextUtils.isEmpty(getIntent().getStringExtra("SEARCH_QUERY"))
                     ? "등록된 카페가 없습니다. 눌러서 다시 불러오기"
                     : "검색어와 일치하는 카페가 없습니다.");
         } else {
-            statusView.setText(defaultLocation
+            statusView.setText((situation == null ? "" : situation.label + " · ") + (defaultLocation
                     ? "위치 확인 불가: 대전 궁동·어은동을 기준으로 추천합니다."
-                    : "현재 위치와 저장된 취향을 기준으로 추천합니다.");
+                    : "현재 위치와 취향을 기준으로 추천합니다."));
         }
     }
 

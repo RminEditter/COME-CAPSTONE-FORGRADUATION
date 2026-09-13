@@ -34,6 +34,10 @@ public final class RecommendationLoader {
     }
 
     public static Task<Result> load(Context context, String uid) {
+        return load(context, uid, null);
+    }
+
+    public static Task<Result> load(Context context, String uid, HomeSituation situation) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Task<DocumentSnapshot> survey = db.collection("users").document(uid).get();
         Task<QuerySnapshot> cafes = db.collection("cafes").get();
@@ -43,7 +47,9 @@ public final class RecommendationLoader {
             SurveyPreferences preferences = SurveyPreferences.from(survey.getResult().getData());
             double[] coordinates = location.getResult();
             List<Recommender.Recommendation> recommendations = Recommender.recommend(
-                    models(cafes.getResult()), preferences.tags, preferences.priority,
+                    models(cafes.getResult()),
+                    situation == null ? preferences.tags : situation.withSurvey(preferences.tags),
+                    situation == null ? preferences.priority : situation.priority,
                     coordinates[0], coordinates[1]);
             if (coordinates[2] == 1) {
                 for (Recommender.Recommendation recommendation : recommendations) {

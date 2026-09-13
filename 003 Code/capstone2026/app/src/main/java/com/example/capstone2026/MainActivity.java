@@ -42,6 +42,13 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtTopCafe1, txtTopCafe2, txtTopCafe3;
 
     private int recommendationRequest = 0;
+    private int rankingRequest = 0;
+    private HomeDashboardView home;
+    private HomePhotoLoader photos;
+    private HomeSituation situation;
+    private Recommender.Recommendation featured;
+    private String featuredUid;
+    private Runnable featuredAction;
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
 
@@ -51,13 +58,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ProfileUi.applyInsets(findViewById(R.id.homeRoot));
 
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
 
         initViews();
+        home = new HomeDashboardView(findViewById(R.id.homeRoot));
+        photos = new HomePhotoLoader(this, findViewById(R.id.imgHomeCafe),
+                findViewById(R.id.txtHomePhotoState), findViewById(R.id.homePhotoCredits));
+        situation = HomeSituation.parse(savedInstanceState == null ? null : savedInstanceState.getString("situation"));
+        com.google.android.material.chip.ChipGroup situations = findViewById(R.id.homeSituations);
+        if (situation != null) situations.check(situation == HomeSituation.STUDY ? R.id.chipHomeStudy
+                : situation == HomeSituation.DATE ? R.id.chipHomeDate : R.id.chipHomeSolo);
+        situations.setOnCheckedStateChangeListener((group, ids) -> {
+            situation = ids.isEmpty() ? null : ids.get(0) == R.id.chipHomeStudy ? HomeSituation.STUDY
+                    : ids.get(0) == R.id.chipHomeDate ? HomeSituation.DATE : HomeSituation.SOLO;
+            fetchCafesAndRecommendAfterLocation();
+        });
         setupClickListeners();
         BottomNavHelper.setup(this);
+        findViewById(R.id.btnNavMain).setSelected(true);
+        findViewById(R.id.btnNavMain).setContentDescription("메인, 현재 탭");
         //cleanupFranchiseDataAllInOne();
         //updateAllCafeTags(); 태그부여 함수 건들지말것.
         //reanalyzeAllCafeTags();
@@ -69,7 +91,8 @@ public class MainActivity extends AppCompatActivity {
 
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
-            Toast.makeText(this, "로그인이 필요한 서비스입니다.", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
             return;
         }
 
@@ -83,15 +106,17 @@ public class MainActivity extends AppCompatActivity {
             });
         } else {
             txtRecentCafe.setOnClickListener(null);
+            txtRecentCafe.setText(R.string.home_recent_empty);
         }
+        ((TextView) findViewById(R.id.txtHomeRecentHint)).setText(txtRecentCafe.hasOnClickListeners()
+                ? "눌러서 카페를 다시 만나보세요." : getString(R.string.home_recent_hint));
 
         fetchAllUsersHighestRatedCafes();
 
         // 💡 필요할 때 주석을 해제하여 네이버 리뷰 크롤링 및 태그 분석 함수를 작동시킵니다.
         // updateAllCafeTags();
 
-        txtRecommendCafeName.setText("취향 분석 중...");
-        txtRecommendCafeDesc.setText("서버에서 계정 설문 정보를 가져오고 있습니다 🔍");
+        home.loading();
 
         requestCurrentLocation();
     }
@@ -190,6 +215,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void fetchAllUsersHighestRatedCafes() {
+        int request = ++rankingRequest;
+        String uid = mAuth.getCurrentUser() == null ? "" : mAuth.getCurrentUser().getUid();
         TextView[] views = {txtTopCafe1, txtTopCafe2, txtTopCafe3};
         for (TextView view : views) {
             view.setText("전체 평점 계산 중...");
@@ -200,9 +227,13 @@ public class MainActivity extends AppCompatActivity {
         com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> visits =
                 db.collection("visit_records").get();
         com.google.android.gms.tasks.Tasks.whenAll(cafes, visits).addOnCompleteListener(task -> {
-            if (isFinishing() || isDestroyed()) return;
+            if (isFinishing() || isDestroyed() || request != rankingRequest
+                    || mAuth.getCurrentUser() == null || !uid.equals(mAuth.getCurrentUser().getUid())) return;
             if (!task.isSuccessful()) {
-                for (TextView view : views) view.setText("평점을 불러오지 못했습니다.");
+                views[0].setText("평점을 불러오지 못했어요. 눌러서 다시 시도");
+                views[0].setOnClickListener(v -> fetchAllUsersHighestRatedCafes());
+                views[1].setText("");
+                views[2].setText("");
                 return;
             }
             List<Recommender.CafeModel> models = RecommendationLoader.models(cafes.getResult());
@@ -215,7 +246,7 @@ public class MainActivity extends AppCompatActivity {
             ranked.sort((a, b) -> Float.compare(stats.get(b.id).avgRating, stats.get(a.id).avgRating));
             for (int i = 0; i < views.length; i++) {
                 if (i >= ranked.size()) {
-                    views[i].setText((i + 1) + ". 평점 데이터 없음");
+                    views[i].setText(i == 0 ? "아직 평가가 등록된 카페가 없어요." : "");
                     continue;
                 }
                 Recommender.CafeModel cafe = ranked.get(i);
@@ -269,27 +300,35 @@ public class MainActivity extends AppCompatActivity {
         if (user == null) return;
         String uid = user.getUid();
         int request = ++recommendationRequest;
-        RecommendationLoader.load(this, uid).addOnCompleteListener(task -> {
+        featured = null;
+        featuredUid = null;
+        featuredAction = null;
+        home.loading();
+        photos.clear();
+        RecommendationLoader.load(this, uid, situation).addOnCompleteListener(task -> {
             if (isFinishing() || isDestroyed() || request != recommendationRequest
                     || mAuth.getCurrentUser() == null
                     || !uid.equals(mAuth.getCurrentUser().getUid())) return;
             if (!task.isSuccessful()) {
-                txtRecommendCafeName.setText("추천을 불러오지 못했습니다.");
-                txtRecommendCafeDesc.setText("네트워크 상태를 확인하고 다시 시도해주세요.");
+                home.message("추천을 불러오지 못했어요", "연결 상태를 확인하고 다시 시도해주세요.", "다시 불러오기");
+                featuredAction = this::fetchCafesAndRecommendAfterLocation;
                 return;
             }
             RecommendationLoader.Result result = task.getResult();
-            if (!result.hasSurvey) {
-                txtRecommendCafeName.setText("나만의 카페를 찾아보세요!");
-                txtRecommendCafeDesc.setText("오른쪽 상단 메뉴에서 취향 설문을 시작해주세요.");
+            if (!result.hasSurvey && situation == null) {
+                home.message("나만의 카페를 찾아보세요", "몇 가지 취향을 알려주시면 어울리는 카페를 추천해드려요.", "내 취향 설정하기");
+                featuredAction = () -> startActivity(new Intent(this, SurveyActivity.class));
             } else if (!result.recommendations.isEmpty()) {
                 Recommender.Recommendation best = result.recommendations.get(0);
-                txtRecommendCafeName.setText(best.cafe.name + " ✨");
-                txtRecommendCafeDesc.setText(best.cafe.address + "\n" + best.reason
-                        + (result.usedDefaultLocation ? "\n위치 확인 불가: 대전 궁동·어은동 기준" : ""));
+                featured = best;
+                featuredUid = uid;
+                home.recommendation(best, result.usedDefaultLocation, situation);
+                updateHomeFavorite();
+                featuredAction = () -> queryCafeAndGoDetail(best.cafe.id, best.cafe.name);
+                photos.load(best.cafe.id);
             } else {
-                txtRecommendCafeName.setText("추천 카페가 없습니다.");
-                txtRecommendCafeDesc.setText("등록된 카페 정보를 확인해주세요.");
+                home.message("추천할 카페가 아직 없어요", "잠시 후 다시 불러오거나 취향을 수정해보세요.", "다시 불러오기");
+                featuredAction = this::fetchCafesAndRecommendAfterLocation;
             }
         });
     }
@@ -320,13 +359,68 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         recommendationRequest++;
+        rankingRequest++;
+        photos.clear();
+        featured = null;
+        featuredAction = null;
+    }
+
+    @Override protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (situation != null) outState.putString("situation", situation.name());
+    }
+
+    private boolean hasCurrentFeature() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        return featured != null && user != null && user.getUid().equals(featuredUid);
+    }
+
+    private void updateHomeFavorite() {
+        if (!hasCurrentFeature()) { home.favorite(false, false); return; }
+        home.favorite(AccountPreferences.open(this, "CafeFitFavorites").getBoolean(featured.cafe.id, false),
+                CafeIdentity.hasId(featured.cafe.id));
+    }
+
+    private void toggleHomeFavorite() {
+        if (!hasCurrentFeature() || !CafeIdentity.hasId(featured.cafe.id)) return;
+        Recommender.CafeModel cafe = featured.cafe;
+        SharedPreferences prefs = AccountPreferences.open(this, "CafeFitFavorites");
+        boolean saved = !prefs.getBoolean(cafe.id, false);
+        StringBuilder tags = new StringBuilder();
+        for (Tag tag : cafe.tags) tags.append('#').append(tag.getKoreanLabel()).append(' ');
+        prefs.edit().putBoolean(cafe.id, saved).putString(cafe.id + "_name", cafe.name)
+                .putString(cafe.id + "_address", cafe.address).putString(cafe.id + "_tags", tags.toString())
+                .putString(cafe.id + "_reason", featured.reason).apply();
+        updateHomeFavorite();
+        Toast.makeText(this, saved ? "즐겨찾기에 추가했어요." : "즐겨찾기에서 해제했어요.", Toast.LENGTH_SHORT).show();
+    }
+
+    private void openHomeMap() {
+        if (!hasCurrentFeature()) return;
+        // Google photo content links to Google Maps, never to the independent MapLibre map.
+        String url = photos.googleMapsUrl();
+        if (url == null) url = "https://www.google.com/maps/search/?api=1&query="
+                + android.net.Uri.encode(featured.cafe.name + " " + featured.cafe.address);
+        try { startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))); }
+        catch (android.content.ActivityNotFoundException ignored) {
+            Toast.makeText(this, "지도를 열 수 있는 앱이 없습니다.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void openAllRecommendations() {
+        Intent intent = new Intent(this, RecommendCafeActivity.class);
+        if (situation != null) intent.putExtra("HOME_SITUATION", situation.name());
+        startActivity(intent);
     }
 
     private void setupClickListeners() {
         btnRecommendCafe.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, RecommendCafeActivity.class);
-            startActivity(intent);
+            if (featuredAction != null) featuredAction.run();
         });
+        findViewById(R.id.btnHomeSurvey).setOnClickListener(v -> startActivity(new Intent(this, SurveyActivity.class)));
+        findViewById(R.id.btnHomeMap).setOnClickListener(v -> openHomeMap());
+        findViewById(R.id.btnHomeFavorite).setOnClickListener(v -> toggleHomeFavorite());
+        findViewById(R.id.btnHomeAll).setOnClickListener(v -> openAllRecommendations());
 
         btnHomeMenu.setOnClickListener(v -> {
             PopupMenu popupMenu = new PopupMenu(MainActivity.this, btnHomeMenu);
@@ -353,10 +447,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         editSearch.setOnEditorActionListener((v, actionId, event) -> {
+            boolean searchAction = actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH;
+            boolean enterKey = event != null
+                    && event.getKeyCode() == android.view.KeyEvent.KEYCODE_ENTER
+                    && event.getAction() == android.view.KeyEvent.ACTION_DOWN;
+            if (!searchAction && !enterKey) return false;
             String query = editSearch.getText().toString().trim();
             if (!query.isEmpty()) {
                 Intent intent = new Intent(MainActivity.this, RecommendCafeActivity.class);
                 intent.putExtra("SEARCH_QUERY", query);
+                if (situation != null) intent.putExtra("HOME_SITUATION", situation.name());
                 startActivity(intent);
                 return true;
             } else {

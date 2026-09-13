@@ -1,0 +1,5 @@
+{
+  "functions": [{ "source": "photo-service", "codebase": "cafe-photos", "runtime": "nodejs22" }],
+  "firestore": [{ "database": "cafe-photo-guard", "rules": "photo-service/firestore.rules" }],
+  "emulators": { "firestore": { "port": 8180 }, "ui": { "enabled": false } }
+}

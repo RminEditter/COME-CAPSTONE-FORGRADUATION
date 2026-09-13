@@ -1,0 +1,8 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // This file targets ONLY the named cafe-photo-guard database.
+    // Cloud Functions Admin SDK uses IAM; Android clients can never reset counters.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

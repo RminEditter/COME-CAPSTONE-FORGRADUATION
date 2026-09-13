@@ -1,8 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
 }
 
+
+val photoProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+// Public endpoint only. The Google API key stays in server Secret Manager.
+val cafePhotoEndpoint = photoProperties.getProperty("cafe.photo.endpoint", "").trim()
+require(cafePhotoEndpoint.isEmpty() || cafePhotoEndpoint.matches(
+    Regex("https://[A-Za-z0-9.-]+/(?:[A-Za-z0-9_/-]*)"))) { "Invalid cafe.photo.endpoint HTTPS URL" }
 
 android {
     namespace = "com.example.capstone2026"
@@ -10,6 +21,7 @@ android {
 
 
     defaultConfig {
+        buildConfigField("String", "CAFE_PHOTO_ENDPOINT", "\"$cafePhotoEndpoint\"")
         applicationId = "com.example.capstone2026"
         minSdk = 24
         targetSdk = 35
@@ -28,6 +40,7 @@ android {
             )
         }
     }
+    buildFeatures { buildConfig = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
