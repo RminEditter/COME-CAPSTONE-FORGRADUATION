@@ -75,7 +75,7 @@
         android:layout_marginTop="6dp"
         android:gravity="end"
         android:text="0 / 10"
-        android:textColor="#8B7768"
+        android:textColor="@color/text_muted"
         android:textSize="12sp" />
 
 </LinearLayout>

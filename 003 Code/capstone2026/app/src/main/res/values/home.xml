@@ -1,5 +1,5 @@
 <resources>
-    <color name="home_muted">#75685D</color>
+    <color name="home_muted">@color/text_muted</color>
     <string name="home_greeting">오늘은 어떤 카페에 가볼까요?</string>
     <string name="home_search">카페 이름으로 검색</string>
     <string name="home_taste">오늘의 카페 취향</string>

@@ -7,4 +7,8 @@
     <color name="beige_soft">#E8DCCB</color>
     <color name="text_dark">#3E2C23</color>
     <color name="white">#FFFFFF</color>
+    <color name="text_muted">#75685D</color>
+    <color name="surface_warm">#FFFDF9</color>
+    <color name="outline_warm">#D9C7B3</color>
+    <color name="surface_variant">#EDE1D2</color>
 </resources>

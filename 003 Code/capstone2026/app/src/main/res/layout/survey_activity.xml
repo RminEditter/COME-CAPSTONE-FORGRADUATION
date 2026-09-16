@@ -17,7 +17,7 @@
             android:layout_height="42dp"
             android:background="@drawable/bg_back_button"
             android:text="←"
-            android:textColor="#4A2C1A"
+            android:textColor="@color/brown_dark"
             android:textSize="22sp"
             android:textStyle="bold"
             android:textAllCaps="false" />
@@ -179,7 +179,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#DDDDDD"
+            android:background="@color/outline_warm"
             android:layout_marginBottom="16dp"/>
 
         <!-- 추가 옵션 -->
@@ -204,8 +204,8 @@
             android:layout_height="60dp"
             android:text="내 맞춤 카페 찾기"
             android:textSize="18sp"
-            android:backgroundTint="#4A2C1A"
-            android:textColor="#DDDDDD"/>
+            android:backgroundTint="@color/brown_dark"
+            android:textColor="@color/white"/>
 
     </LinearLayout>
 

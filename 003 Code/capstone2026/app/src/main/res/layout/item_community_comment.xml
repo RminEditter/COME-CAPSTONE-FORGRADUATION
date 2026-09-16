@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="2026-08-19 15:00"
-        android:textColor="#8B7768"
+        android:textColor="@color/text_muted"
         android:textSize="11sp" />
 
 </LinearLayout>

@@ -1,5 +1,5 @@
 <resources>
-    <color name="profile_muted">#77685C</color>
+    <color name="profile_muted">@color/text_muted</color>
     <string name="profile_title">마이페이지</string>
     <string name="profile_nav_map">지도</string>
     <string name="profile_nav_main">메인</string>

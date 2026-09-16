@@ -12,7 +12,7 @@
         android:layout_height="48dp"
         android:background="@drawable/bg_back_button"
         android:text="←"
-        android:textColor="#4A2C1A"
+        android:textColor="@color/brown_dark"
         android:textSize="22sp"
         android:textStyle="bold"
         android:textAllCaps="false" />
@@ -30,7 +30,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:text="다녀온 카페의 별점과 메모를 확인해보세요."
-        android:textColor="#7A6658"
+        android:textColor="@color/text_muted"
         android:textSize="14sp" />
 
     <TextView
@@ -40,7 +40,7 @@
         android:background="@drawable/bg_search_box"
         android:padding="12dp"
         android:text="기록을 클릭하면 수정, 길게 누르면 삭제할 수 있어요."
-        android:textColor="#6F4E37"
+        android:textColor="@color/brown_main"
         android:textSize="13sp" />
 
     <androidx.recyclerview.widget.RecyclerView
