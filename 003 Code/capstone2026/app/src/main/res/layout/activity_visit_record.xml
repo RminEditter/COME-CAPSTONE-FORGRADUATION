@@ -17,7 +17,7 @@
             android:layout_height="42dp"
             android:background="@drawable/bg_back_button"
             android:text="←"
-            android:textColor="#4A2C1A"
+            android:textColor="@color/brown_dark"
             android:textSize="22sp"
             android:textStyle="bold"
             android:textAllCaps="false" />
@@ -35,7 +35,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:text="카페에 대한 별점과 메모를 저장해보세요."
-            android:textColor="#7A6658"
+            android:textColor="@color/text_muted"
             android:textSize="14sp" />
 
         <LinearLayout
@@ -93,7 +93,7 @@
                 android:inputType="textMultiLine"
                 android:padding="14dp"
                 android:textColor="@color/text_dark"
-                android:textColorHint="#A89788"
+                android:textColorHint="@color/text_muted"
                 android:textSize="14sp" />
 
             <Button

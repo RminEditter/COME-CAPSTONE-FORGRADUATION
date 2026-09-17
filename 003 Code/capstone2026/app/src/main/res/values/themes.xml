@@ -1,9 +1,38 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Capstone2026" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+<resources>
+    <!-- Existing screens use the light coffee palette in both device modes. -->
+    <style name="Base.Theme.Capstone2026" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/brown_main</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/beige_soft</item>
+        <item name="colorOnPrimaryContainer">@color/brown_dark</item>
+        <item name="colorSecondary">@color/brown_main</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/beige_soft</item>
+        <item name="colorOnSecondaryContainer">@color/brown_dark</item>
+        <item name="colorTertiary">@color/brown_dark</item>
+        <item name="colorOnTertiary">@color/white</item>
+        <item name="colorTertiaryContainer">@color/surface_variant</item>
+        <item name="colorOnTertiaryContainer">@color/text_dark</item>
+        <item name="android:colorBackground">@color/ivory_bg</item>
+        <item name="colorOnBackground">@color/text_dark</item>
+        <item name="colorSurface">@color/surface_warm</item>
+        <item name="colorOnSurface">@color/text_dark</item>
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/text_muted</item>
+        <item name="colorOutline">@color/text_muted</item>
+        <item name="colorOutlineVariant">@color/outline_warm</item>
+        <item name="colorAccent">@color/brown_main</item>
+        <item name="android:colorAccent">@color/brown_main</item>
+        <item name="colorControlActivated">@color/brown_main</item>
+        <item name="colorControlNormal">@color/text_muted</item>
+        <item name="android:textColorPrimary">@color/text_dark</item>
+        <item name="android:textColorSecondary">@color/text_muted</item>
+        <item name="android:textColorHint">@color/text_muted</item>
+        <item name="android:windowBackground">@color/ivory_bg</item>
+        <item name="android:statusBarColor">@color/ivory_bg</item>
+        <item name="android:navigationBarColor">@color/ivory_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
-
     <style name="Theme.Capstone2026" parent="Base.Theme.Capstone2026" />
 </resources>

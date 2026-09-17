@@ -3,7 +3,7 @@
     android:id="@+id/bottomNavBar"
     android:layout_width="match_parent"
     android:layout_height="64dp"
-    android:background="#F5F1EA"
+    android:background="@color/ivory_bg"
     android:elevation="10dp"
     android:gravity="center"
     android:orientation="horizontal"

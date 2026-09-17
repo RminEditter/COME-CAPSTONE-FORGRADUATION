@@ -4,7 +4,7 @@
     android:id="@+id/bottomSheetLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@android:color/white"
+    android:background="@color/surface_warm"
     android:elevation="16dp"
     android:orientation="vertical"
     android:padding="20dp"
@@ -18,7 +18,7 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="12dp"
-        android:background="#DDDDDD" />
+        android:background="@color/outline_warm" />
 
     <!-- 카페 이름 -->
     <TextView
@@ -26,7 +26,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="카페 이름"
-        android:textColor="#111111"
+        android:textColor="@color/text_dark"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -37,7 +37,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:text="대전광역시 중구 ..."
-        android:textColor="#666666"
+        android:textColor="@color/text_muted"
         android:textSize="14sp" />
 
     <!-- 태그 목록 (ChipGroup) -->
@@ -53,7 +53,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:backgroundTint="#FF6F00"
+        android:backgroundTint="@color/brown_main"
         android:text="카페 상세 정보 보기"
         android:textColor="@android:color/white"
         android:textSize="15sp"

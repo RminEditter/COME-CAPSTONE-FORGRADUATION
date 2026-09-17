@@ -31,7 +31,7 @@
                 android:background="@drawable/bg_back_button"
                 android:text="←"
                 android:textAllCaps="false"
-                android:textColor="#4A2C1A"
+                android:textColor="@color/brown_dark"
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
