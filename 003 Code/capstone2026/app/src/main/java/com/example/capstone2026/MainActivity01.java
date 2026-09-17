@@ -70,6 +70,7 @@ public class MainActivity01 extends AppCompatActivity {
             if (task.isSuccessful()) {
                 allCafes.clear();
                 for (QueryDocumentSnapshot document : task.getResult()) {
+                    if (!CafeDiscoveryPolicy.isDiscoverable(document.getData())) continue;
                     String name = document.getString("name");
                     String address = document.getString("address");
                     List<String> tagStrings = (List<String>) document.get("tags");

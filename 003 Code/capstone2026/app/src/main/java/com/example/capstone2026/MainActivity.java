@@ -100,7 +100,8 @@ public class MainActivity extends AppCompatActivity {
         String recentCafeName = recentPrefs.getString("recentCafe", "최근 본 카페가 없습니다.");
         txtRecentCafe.setText(recentCafeName);
 
-        if (!recentCafeName.equals("최근 본 카페가 없습니다.") && !recentCafeName.isEmpty()) {
+        if (!recentCafeName.equals("최근 본 카페가 없습니다.")
+                && CafeDiscoveryPolicy.isDiscoverableName(recentCafeName)) {
             txtRecentCafe.setOnClickListener(v -> {
                 queryCafeAndGoDetail(recentPrefs.getString("recentCafeId", null), recentCafeName);
             });
@@ -226,7 +227,25 @@ public class MainActivity extends AppCompatActivity {
                 db.collection("cafes").get();
         com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> visits =
                 db.collection("visit_records").get();
-        com.google.android.gms.tasks.Tasks.whenAll(cafes, visits).addOnCompleteListener(task -> {
+        com.google.android.gms.tasks.Tasks.whenAll(cafes, visits)
+                .continueWith(RecommendationLoader.COMPUTATION, task -> {
+            if (!task.isSuccessful()) throw task.getException();
+            List<Recommender.CafeModel> models = RecommendationLoader.models(cafes.getResult());
+            Map<String, CafeRatingStats> stats = new CafeIdentity(models)
+                    .aggregate(VisitRecordRepository.records(visits.getResult()));
+            List<Recommender.CafeModel> ranked = new ArrayList<>();
+            for (Recommender.CafeModel cafe : models) {
+                if (stats.containsKey(cafe.id)) ranked.add(cafe);
+            }
+            ranked.sort((a, b) -> Float.compare(stats.get(b.id).avgRating, stats.get(a.id).avgRating));
+            List<String[]> rows = new ArrayList<>();
+            for (int i = 0; i < Math.min(3, ranked.size()); i++) {
+                Recommender.CafeModel cafe = ranked.get(i);
+                rows.add(new String[]{cafe.id, cafe.name, String.format(java.util.Locale.getDefault(),
+                        "%d. %s  ★%.1f", i + 1, cafe.name, stats.get(cafe.id).avgRating)});
+            }
+            return rows;
+        }).addOnCompleteListener(task -> {
             if (isFinishing() || isDestroyed() || request != rankingRequest
                     || mAuth.getCurrentUser() == null || !uid.equals(mAuth.getCurrentUser().getUid())) return;
             if (!task.isSuccessful()) {
@@ -236,23 +255,15 @@ public class MainActivity extends AppCompatActivity {
                 views[2].setText("");
                 return;
             }
-            List<Recommender.CafeModel> models = RecommendationLoader.models(cafes.getResult());
-            Map<String, CafeRatingStats> stats = new CafeIdentity(models)
-                    .aggregate(VisitRecordRepository.records(visits.getResult()));
-            List<Recommender.CafeModel> ranked = new ArrayList<>();
-            for (Recommender.CafeModel cafe : models) {
-                if (stats.containsKey(cafe.id)) ranked.add(cafe);
-            }
-            ranked.sort((a, b) -> Float.compare(stats.get(b.id).avgRating, stats.get(a.id).avgRating));
+            List<String[]> rows = task.getResult();
             for (int i = 0; i < views.length; i++) {
-                if (i >= ranked.size()) {
+                if (i >= rows.size()) {
                     views[i].setText(i == 0 ? "아직 평가가 등록된 카페가 없어요." : "");
                     continue;
                 }
-                Recommender.CafeModel cafe = ranked.get(i);
-                views[i].setText(String.format(java.util.Locale.getDefault(),
-                        "%d. %s  ★%.1f", i + 1, cafe.name, stats.get(cafe.id).avgRating));
-                views[i].setOnClickListener(v -> queryCafeAndGoDetail(cafe.id, cafe.name));
+                String[] row = rows.get(i);
+                views[i].setText(row[2]);
+                views[i].setOnClickListener(v -> queryCafeAndGoDetail(row[0], row[1]));
             }
         });
     }
@@ -281,6 +292,10 @@ public class MainActivity extends AppCompatActivity {
         if (isFinishing() || isDestroyed()) return;
         if (!document.exists()) {
             Toast.makeText(this, "카페 정보가 없습니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!CafeDiscoveryPolicy.isDiscoverable(document.getData())) {
+            Toast.makeText(this, "카페가 아닌 매장으로 분류되어 추천에서 제외됐어요.", Toast.LENGTH_SHORT).show();
             return;
         }
         Recommender.CafeModel cafe = RecommendationLoader.model(document);

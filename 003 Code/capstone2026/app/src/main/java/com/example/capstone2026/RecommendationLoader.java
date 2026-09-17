@@ -20,6 +20,9 @@ import java.util.List;
 
 /** Rebuilds recommendations from persistent account data on every screen entry. */
 public final class RecommendationLoader {
+    // Firestore callbacks default to the UI thread; bulk processing must not run there.
+    static final java.util.concurrent.Executor COMPUTATION =
+            java.util.concurrent.Executors.newFixedThreadPool(2);
     public static final class Result {
         public final List<Recommender.Recommendation> recommendations;
         public final boolean usedDefaultLocation;
@@ -42,7 +45,7 @@ public final class RecommendationLoader {
         Task<DocumentSnapshot> survey = db.collection("users").document(uid).get();
         Task<QuerySnapshot> cafes = db.collection("cafes").get();
         Task<double[]> location = locate(context.getApplicationContext());
-        return Tasks.whenAll(survey, cafes, location).continueWith(task -> {
+        return Tasks.whenAll(survey, cafes, location).continueWith(COMPUTATION, task -> {
             if (!task.isSuccessful()) throw task.getException();
             SurveyPreferences preferences = SurveyPreferences.from(survey.getResult().getData());
             double[] coordinates = location.getResult();
@@ -63,7 +66,9 @@ public final class RecommendationLoader {
 
     public static List<Recommender.CafeModel> models(QuerySnapshot snapshot) {
         List<Recommender.CafeModel> result = new ArrayList<>();
-        for (DocumentSnapshot document : snapshot.getDocuments()) result.add(model(document));
+        for (DocumentSnapshot document : snapshot.getDocuments()) {
+            if (CafeDiscoveryPolicy.isDiscoverable(document.getData())) result.add(model(document));
+        }
         return result;
     }
 

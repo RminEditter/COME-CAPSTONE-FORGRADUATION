@@ -20,6 +20,7 @@ public class FirebaseRepository {
             if (task.isSuccessful()) {
                 List<Cafe> cafeList = new ArrayList<>();
                 for (QueryDocumentSnapshot document : task.getResult()) {
+                    if (!CafeDiscoveryPolicy.isDiscoverable(document.getData())) continue;
                     cafeList.add(document.toObject(Cafe.class));
                 }
                 listener.onSuccess(cafeList);
@@ -40,6 +41,7 @@ public class FirebaseRepository {
                     if (task.isSuccessful()) {
                         List<Cafe> searchResults = new ArrayList<>();
                         for (QueryDocumentSnapshot document : task.getResult()) {
+                            if (!CafeDiscoveryPolicy.isDiscoverable(document.getData())) continue;
                             searchResults.add(document.toObject(Cafe.class));
                         }
                         listener.onSuccess(searchResults);

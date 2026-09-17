@@ -72,6 +72,11 @@ public class MapActivity extends AppCompatActivity {
     private final List<CafeMapItem> allCafeItems = new ArrayList<>();
     private final Map<Long, CafeMapItem> markerCafeMap = new HashMap<>();
 
+    private final android.os.Handler markerHandler = new android.os.Handler(Looper.getMainLooper());
+    private int markerGeneration;
+    private boolean updatingFilterChips;
+    private boolean allTagsSelected = true;
+
     private String selectedDistrict = "전체";
     private final List<Tag> selectedTagFilters = new ArrayList<>(); // 선택된 태그 필터
     private Location lastKnownLocation;
@@ -196,9 +201,22 @@ public class MapActivity extends AppCompatActivity {
         if (chipGroupFilter == null) return;
 
         chipGroupFilter.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (updatingFilterChips) return;
+            updatingFilterChips = true;
+            boolean allChecked = checkedIds.contains(R.id.chipAll);
+            if (allChecked && !allTagsSelected) {
+                group.clearCheck();
+                group.check(R.id.chipAll);
+            } else if (allChecked && checkedIds.size() > 1) {
+                ((Chip) findViewById(R.id.chipAll)).setChecked(false);
+            } else if (checkedIds.isEmpty()) {
+                group.check(R.id.chipAll);
+            }
+            allTagsSelected = ((Chip) findViewById(R.id.chipAll)).isChecked();
+            updatingFilterChips = false;
             selectedTagFilters.clear();
 
-            for (int id : checkedIds) {
+            for (int id : group.getCheckedChipIds()) {
                 if (id == R.id.chipWork) selectedTagFilters.add(Tag.WORK_FRIENDLY);
                 else if (id == R.id.chipOutlet) selectedTagFilters.add(Tag.OUTLET_MANY);
                 else if (id == R.id.chipLaptop) selectedTagFilters.add(Tag.LAPTOP_OK);
@@ -241,6 +259,7 @@ public class MapActivity extends AppCompatActivity {
 
     private void loadCafeData() {
         db.collection("cafes").get().addOnCompleteListener(task -> {
+            if (isFinishing() || isDestroyed()) return;
             if (!task.isSuccessful() || task.getResult() == null) {
                 Toast.makeText(this, "카페 정보를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show();
                 return;
@@ -249,6 +268,7 @@ public class MapActivity extends AppCompatActivity {
             allCafeItems.clear();
 
             for (QueryDocumentSnapshot document : task.getResult()) {
+                if (!CafeDiscoveryPolicy.isDiscoverable(document.getData())) continue;
                 String cafeId = document.getString("id");
                 String cafeName = document.getString("name");
                 String address = document.getString("address");
@@ -295,53 +315,40 @@ public class MapActivity extends AppCompatActivity {
     private void showFilteredCafeMarkers() {
         if (mapLibreMap == null) return;
 
-        clearCafeMarkers();
-        int count = 0;
-        int maxRenderLimit = 300;
-
-        for (CafeMapItem cafe : allCafeItems) {
-            // 1. 자치구 필터링
-            if (!isCafeInSelectedDistrict(cafe)) continue;
-
-            // 2. 다중 태그 칩 필터링 (선택한 태그들을 카페가 모두 포함하고 있는지 검사)
-            if (!selectedTagFilters.isEmpty()) {
-                boolean hasAllTags = true;
-                for (Tag filterTag : selectedTagFilters) {
-                    if (!cafe.rawTags.contains(filterTag)) {
-                        hasAllTags = false;
-                        break;
+        final int generation = ++markerGeneration;
+        markerHandler.removeCallbacksAndMessages(null);
+        if (bottomSheetBehavior != null) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        selectedCafeItem = null;
+        List<CafeMapItem> matches = MapCafeFilter.select(allCafeItems, selectedDistrict, selectedTagFilters);
+        // Spread native marker operations across frames; never truncate the matching cafes.
+        markerHandler.post(new Runnable() {
+            int index;
+            boolean removedOldMarkers;
+            @Override public void run() {
+                if (generation != markerGeneration || isFinishing() || isDestroyed()) return;
+                long deadline = android.os.SystemClock.uptimeMillis() + 6;
+                int operations = 0;
+                while (!removedOldMarkers && !cafeMarkers.isEmpty() && operations++ < 30) {
+                    Marker marker = cafeMarkers.remove(cafeMarkers.size() - 1);
+                    markerCafeMap.remove(marker.getId());
+                    mapLibreMap.removeMarker(marker);
+                    if (android.os.SystemClock.uptimeMillis() >= deadline) break;
+                }
+                if (cafeMarkers.isEmpty()) removedOldMarkers = true;
+                if (removedOldMarkers) {
+                    while (index < matches.size() && operations++ < 30) {
+                        CafeMapItem cafe = matches.get(index++);
+                        Marker marker = mapLibreMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(cafe.latitude, cafe.longitude)).title(cafe.name));
+                        cafeMarkers.add(marker);
+                        markerCafeMap.put(marker.getId(), cafe);
+                        if (android.os.SystemClock.uptimeMillis() >= deadline) break;
                     }
                 }
-                if (!hasAllTags) continue; // 선택된 태그 중 하나라도 없으면 스킵
+                if (!removedOldMarkers || index < matches.size()) markerHandler.postDelayed(this, 16);
             }
-
-            Marker marker = mapLibreMap.addMarker(
-                    new MarkerOptions()
-                            .position(new LatLng(cafe.latitude, cafe.longitude))
-                            .title(cafe.name)
-            );
-
-            cafeMarkers.add(marker);
-            markerCafeMap.put(marker.getId(), cafe);
-
-            count++;
-            if (count >= maxRenderLimit) break;
-        }
+        });
     }
-    private boolean isCafeInSelectedDistrict(CafeMapItem cafe) {
-        if ("전체".equals(selectedDistrict)) return true;
-        return cafe.address != null && cafe.address.contains(selectedDistrict);
-    }
-
-    private void clearCafeMarkers() {
-        if (mapLibreMap == null) return;
-        for (Marker marker : cafeMarkers) {
-            mapLibreMap.removeMarker(marker);
-        }
-        cafeMarkers.clear();
-        markerCafeMap.clear();
-    }
-
     private void moveCameraToDistrict(String district) {
         if (mapLibreMap == null) return;
         double latitude = 36.3504, longitude = 127.3845, zoom = 10.8;
@@ -464,21 +471,6 @@ public class MapActivity extends AppCompatActivity {
     @Override protected void onStop() { super.onStop(); mapView.onStop(); }
     @Override protected void onSaveInstanceState(@NonNull Bundle outState) { super.onSaveInstanceState(outState); mapView.onSaveInstanceState(outState); }
     @Override public void onLowMemory() { super.onLowMemory(); mapView.onLowMemory(); }
-    @Override protected void onDestroy() { super.onDestroy(); stopLocationUpdates(); mapView.onDestroy(); }
+    @Override protected void onDestroy() { markerGeneration++; markerHandler.removeCallbacksAndMessages(null); super.onDestroy(); stopLocationUpdates(); mapView.onDestroy(); }
 
-    private static class CafeMapItem {
-        String id, name, address, tags;
-        List<Tag> rawTags;
-        double latitude, longitude;
-
-        CafeMapItem(String id, String name, String address, String tags, List<Tag> rawTags, double latitude, double longitude) {
-            this.id = id;
-            this.name = name;
-            this.address = address;
-            this.tags = tags;
-            this.rawTags = rawTags;
-            this.latitude = latitude;
-            this.longitude = longitude;
-        }
-    }
 }
