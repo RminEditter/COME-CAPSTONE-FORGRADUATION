@@ -322,14 +322,7 @@ public class RecommendCafeActivity extends AppCompatActivity {
                 List<VisitRecord> records = VisitRecordRepository.records(visits.getResult());
                 ratingStatsMap = identity.aggregate(records);
                 adapter.setRatingStatsMap(ratingStatsMap);
-                for (VisitRecord record : records) {
-                    if (!uid.equals(record.getUserUid())) continue;
-                    Recommender.CafeModel cafe = findCafeById(
-                            identity.resolve(record.getCafeId(), record.getCafeName()));
-                    if (cafe == null) continue;
-                    if (record.getRating() >= 4) addCafeTagsToPersonalizationScore(cafe, 1);
-                    else if (record.getRating() <= 2) addCafeTagsToPersonalizationScore(cafe, -1);
-                }
+
             }
             if (feedback.isSuccessful()) {
                 for (QueryDocumentSnapshot document : feedback.getResult()) {

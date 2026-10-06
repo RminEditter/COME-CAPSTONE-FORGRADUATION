@@ -1,0 +1,7 @@
+// Local emulator only. Never deploy this fixture to a real project.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /visit_records/{id} { allow read, write: if true; }
+  }
+}

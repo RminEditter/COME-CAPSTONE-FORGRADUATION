@@ -49,6 +49,8 @@ public class MapActivity extends AppCompatActivity {
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
 
+    private MapTagIcons tagIcons;
+    private TextView markerLegend;
     private MapView mapView;
     private MapLibreMap mapLibreMap;
 
@@ -93,6 +95,8 @@ public class MapActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
+        tagIcons = new MapTagIcons(this);
+        markerLegend = findViewById(R.id.mapMarkerLegend);
         setupBackButton();
         initBottomSheet();
 
@@ -188,6 +192,7 @@ public class MapActivity extends AppCompatActivity {
         for (Tag tag : cafe.rawTags) {
             Chip chip = new Chip(this);
             chip.setText("#" + tag.getKoreanLabel());
+            MapTagIcons.styleChip(chip, MapTagStyle.forTag(tag));
             chip.setClickable(false);
             chip.setCheckable(false);
             chipGroupCafeTags.addView(chip);
@@ -200,6 +205,14 @@ public class MapActivity extends AppCompatActivity {
     private void setupTagFilter() {
         if (chipGroupFilter == null) return;
 
+        int[] ids = {R.id.chipWork, R.id.chipOutlet, R.id.chipLaptop, R.id.chipDessert, R.id.chipNutty};
+        for (int i = 0; i < ids.length; i++) {
+            Chip chip = findViewById(ids[i]);
+            MapTagStyle style = MapTagStyle.values()[i];
+            chip.setText(style.symbol + " · " + style.label);
+            MapTagIcons.styleChip(chip, style);
+        }
+        updateMarkerLegend();
         chipGroupFilter.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (updatingFilterChips) return;
             updatingFilterChips = true;
@@ -224,9 +237,18 @@ public class MapActivity extends AppCompatActivity {
                 else if (id == R.id.chipNutty) selectedTagFilters.add(Tag.BEAN_NUTTY);
             }
 
+            updateMarkerLegend();
             // 전체 칩(chipAll)이 선택되었거나 다른 선택 칩이 없다면 전체 보기 처리
             showFilteredCafeMarkers();
         });
+    }
+
+    private void updateMarkerLegend() {
+        markerLegend.setText(selectedTagFilters.isEmpty()
+                ? "마커 색·글자 = 위 태그 색상 · 회색 카 = 기타\n여러 태그가 있으면 공 → 전 → 노 → 디 → 콩 순으로 대표 표시"
+                : selectedTagFilters.size() == 1
+                ? "선택한 태그의 색·글자로 표시합니다."
+                : "선택한 태그를 모두 만족하는 카페 · 작은 색상 점은 선택 태그");
     }
 
     private void setupBackButton() {
@@ -319,6 +341,7 @@ public class MapActivity extends AppCompatActivity {
         markerHandler.removeCallbacksAndMessages(null);
         if (bottomSheetBehavior != null) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         selectedCafeItem = null;
+        final List<Tag> markerTags = new ArrayList<>(selectedTagFilters);
         List<CafeMapItem> matches = MapCafeFilter.select(allCafeItems, selectedDistrict, selectedTagFilters);
         // Spread native marker operations across frames; never truncate the matching cafes.
         markerHandler.post(new Runnable() {
@@ -339,7 +362,8 @@ public class MapActivity extends AppCompatActivity {
                     while (index < matches.size() && operations++ < 30) {
                         CafeMapItem cafe = matches.get(index++);
                         Marker marker = mapLibreMap.addMarker(new MarkerOptions()
-                                .position(new LatLng(cafe.latitude, cafe.longitude)).title(cafe.name));
+                                .position(new LatLng(cafe.latitude, cafe.longitude)).title(cafe.name)
+                                .icon(tagIcons.icon(cafe.rawTags, markerTags)));
                         cafeMarkers.add(marker);
                         markerCafeMap.put(marker.getId(), cafe);
                         if (android.os.SystemClock.uptimeMillis() >= deadline) break;

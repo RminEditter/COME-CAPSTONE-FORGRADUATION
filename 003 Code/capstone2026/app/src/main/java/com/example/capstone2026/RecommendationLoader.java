@@ -44,8 +44,13 @@ public final class RecommendationLoader {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Task<DocumentSnapshot> survey = db.collection("users").document(uid).get();
         Task<QuerySnapshot> cafes = db.collection("cafes").get();
+        Task<List<VisitRecord>> visits = db.collection("visit_records").whereEqualTo("userUid", uid).get()
+                .continueWith(COMPUTATION, completed -> {
+                    if (!completed.isSuccessful()) throw completed.getException();
+                    return VisitRecordRepository.records(completed.getResult());
+                });
         Task<double[]> location = locate(context.getApplicationContext());
-        return Tasks.whenAll(survey, cafes, location).continueWith(COMPUTATION, task -> {
+        return Tasks.whenAll(survey, cafes, location, visits).continueWith(COMPUTATION, task -> {
             if (!task.isSuccessful()) throw task.getException();
             SurveyPreferences preferences = SurveyPreferences.from(survey.getResult().getData());
             double[] coordinates = location.getResult();
@@ -54,6 +59,7 @@ public final class RecommendationLoader {
                     situation == null ? preferences.tags : situation.withSurvey(preferences.tags),
                     situation == null ? preferences.priority : situation.priority,
                     coordinates[0], coordinates[1]);
+            VisitTagPreferences.apply(recommendations, VisitTagPreferences.scores(visits.getResult(), uid));
             if (coordinates[2] == 1) {
                 for (Recommender.Recommendation recommendation : recommendations) {
                     recommendation.reason = recommendation.reason.replace("현재 위치", "대전 궁동·어은동 위치")

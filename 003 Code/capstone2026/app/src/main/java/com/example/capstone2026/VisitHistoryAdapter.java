@@ -109,6 +109,8 @@ public class VisitHistoryAdapter extends RecyclerView.Adapter<VisitHistoryAdapte
             intent.putExtra("cafeId", record.getCafeId());
             intent.putExtra("rating", record.getRating());
             intent.putExtra("memo", record.getMemo());
+            intent.putStringArrayListExtra("observedTags", new java.util.ArrayList<>(record.getObservedTags()));
+            intent.putStringArrayListExtra("likedTags", new java.util.ArrayList<>(record.getLikedTags()));
             intent.putExtra("visitedAt", record.getVisitedAt());
 
             v.getContext().startActivity(intent);

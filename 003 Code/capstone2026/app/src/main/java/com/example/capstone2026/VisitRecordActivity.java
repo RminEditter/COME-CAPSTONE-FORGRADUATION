@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 public class VisitRecordActivity extends AppCompatActivity {
+    private VisitTagSelector tagSelector;
     private RatingBar ratingBar;
     private EditText etMemo;
     private Button btnSaveVisit;
@@ -50,10 +51,21 @@ public class VisitRecordActivity extends AppCompatActivity {
             etMemo.setText(getIntent().getStringExtra("memo"));
             btnSaveVisit.setText("수정하기");
         }
+        tagSelector = new VisitTagSelector(this, findViewById(R.id.visitObservedTags), findViewById(R.id.visitLikedTags));
+        tagSelector.restore(savedInstanceState == null ? getIntent().getStringArrayListExtra("observedTags")
+                        : savedInstanceState.getStringArrayList("observedTags"),
+                savedInstanceState == null ? getIntent().getStringArrayListExtra("likedTags")
+                        : savedInstanceState.getStringArrayList("likedTags"));
         btnSaveVisit.setOnClickListener(v -> {
             if ("edit".equals(mode)) updateVisitRecord();
             else saveVisitRecord();
         });
+    }
+
+    @Override protected void onSaveInstanceState(Bundle state) {
+        super.onSaveInstanceState(state);
+        state.putStringArrayList("observedTags", tagSelector.observations());
+        state.putStringArrayList("likedTags", tagSelector.favorites());
     }
 
     private void saveVisitRecord() {
@@ -75,6 +87,8 @@ public class VisitRecordActivity extends AppCompatActivity {
         record.put("memo", etMemo.getText().toString().trim());
         record.put("visitedAt", System.currentTimeMillis());
         record.put("userUid", uid);
+        record.put("observedTags", tagSelector.observations());
+        record.put("likedTags", tagSelector.favorites());
         btnSaveVisit.setEnabled(false);
         db.collection("visit_records").add(record)
                 .addOnSuccessListener(reference -> {
@@ -96,6 +110,8 @@ public class VisitRecordActivity extends AppCompatActivity {
         String uid = user.getUid();
         float rating = ratingBar.getRating();
         String memo = etMemo.getText().toString().trim();
+        List<String> observedTags = tagSelector.observations();
+        List<String> likedTags = tagSelector.favorites();
         DocumentReference reference = db.collection("visit_records").document(recordId);
         btnSaveVisit.setEnabled(false);
         // Preserve the stored cafe ID, owner and visit date, including legacy records.
@@ -104,7 +120,8 @@ public class VisitRecordActivity extends AppCompatActivity {
             if (!existing.exists() || !uid.equals(existing.getString("userUid"))) {
                 throw new IllegalStateException("본인이 작성한 기록만 수정할 수 있습니다.");
             }
-            transaction.update(reference, "rating", rating, "memo", memo);
+            transaction.update(reference, "rating", rating, "memo", memo,
+                    "observedTags", observedTags, "likedTags", likedTags);
             return null;
         }).addOnSuccessListener(unused -> {
             showMessage("방문 기록이 수정되었습니다.");

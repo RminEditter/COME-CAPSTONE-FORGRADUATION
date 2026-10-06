@@ -29,6 +29,7 @@ public class Recommender {
         public CafeModel cafe;
         public int score;
         public int baseScore;
+        public int visitTagBonus;
         public String reason;
         public double distanceMeters;
 
@@ -192,7 +193,7 @@ public class Recommender {
             }
 
             // 피드백 점수가 여러 번 누적되지 않도록 기존 알고리즘 점수로 초기화
-            recommendation.score = recommendation.baseScore;
+            recommendation.score = Math.min(100, recommendation.baseScore + recommendation.visitTagBonus);
 
             if (feedbackTagScores == null ||
                     feedbackTagScores.isEmpty() ||

@@ -143,6 +143,18 @@
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
 
+        <TextView
+            android:id="@+id/mapMarkerLegend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="8dp"
+            android:textColor="#424242"
+            android:background="#FFFFFF"
+            android:textSize="12sp"
+            android:accessibilityLiveRegion="polite" />
+
         <!-- 4. 지도 영역 (LinearLayout 내부에서 남아있는 공간을 채우도록 layout_height="match_parent" 설정) -->
         <org.maplibre.android.maps.MapView
             android:id="@+id/mapView"

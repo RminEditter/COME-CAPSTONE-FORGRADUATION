@@ -2,6 +2,12 @@ package com.example.capstone2026;
 
 public class VisitRecord {
 
+    private java.util.List<String> observedTags = new java.util.ArrayList<>();
+    private java.util.List<String> likedTags = new java.util.ArrayList<>();
+    public java.util.List<String> getObservedTags() { return observedTags; }
+    public void setObservedTags(java.util.List<String> tags) { observedTags = tags == null ? new java.util.ArrayList<>() : tags; }
+    public java.util.List<String> getLikedTags() { return likedTags; }
+    public void setLikedTags(java.util.List<String> tags) { likedTags = tags == null ? new java.util.ArrayList<>() : tags; }
     private String id; // Firestore 문서 고유 ID
     private String cafeName;
     private String cafeId;
