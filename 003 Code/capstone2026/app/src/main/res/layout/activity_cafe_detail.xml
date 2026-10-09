@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -12,7 +13,10 @@
         android:orientation="vertical"
         android:paddingBottom="30dp">
 
-        <!-- 1. 상단 타이틀바 (뒤로가기 + 카페명) -->
+        <!-- =====================================================
+             1. 상단 타이틀바
+             ===================================================== -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -26,8 +30,8 @@
                 android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="뒤로가기"
-                app:tint="@color/brown_main"
-                android:src="@android:drawable/ic_menu_revert" />
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="@color/brown_main" />
 
             <TextView
                 android:id="@+id/txtDetailCafeName"
@@ -50,7 +54,11 @@
 
         </LinearLayout>
 
-        <!-- 2. 주소 & 평점 카드 영역 -->
+
+        <!-- =====================================================
+             2. 주소 / 평점 / 기존 태그
+             ===================================================== -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -60,7 +68,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- 평점 및 요약 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -84,6 +91,7 @@
                     android:text="(0개 리뷰)"
                     android:textColor="@color/text_muted"
                     android:textSize="13sp" />
+
             </LinearLayout>
 
             <TextView
@@ -95,7 +103,6 @@
                 android:textColor="@color/text_dark"
                 android:textSize="14sp" />
 
-            <!-- Dynamic Chip Group (태그 목록) -->
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupDetailTags"
                 android:layout_width="match_parent"
@@ -104,7 +111,11 @@
 
         </LinearLayout>
 
-        <!-- 3. 실제 앱 느낌의 Quick Action 버튼 바 (전화/길찾기/공유) -->
+
+        <!-- =====================================================
+             3. 전화 / 길찾기 / 공유
+             ===================================================== -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -122,8 +133,8 @@
                 android:background="@color/surface_warm"
                 android:contentDescription="전화걸기"
                 android:elevation="1dp"
-                app:tint="@color/brown_main"
-                android:src="@android:drawable/ic_menu_call" />
+                android:src="@android:drawable/ic_menu_call"
+                app:tint="@color/brown_main" />
 
             <ImageButton
                 android:id="@+id/btnActionNavi"
@@ -134,8 +145,8 @@
                 android:background="@color/surface_warm"
                 android:contentDescription="길찾기"
                 android:elevation="1dp"
-                app:tint="@color/brown_main"
-                android:src="@android:drawable/ic_menu_compass" />
+                android:src="@android:drawable/ic_menu_compass"
+                app:tint="@color/brown_main" />
 
             <ImageButton
                 android:id="@+id/btnActionShare"
@@ -146,12 +157,16 @@
                 android:background="@color/surface_warm"
                 android:contentDescription="공유하기"
                 android:elevation="1dp"
-                app:tint="@color/brown_main"
-                android:src="@android:drawable/ic_menu_share" />
+                android:src="@android:drawable/ic_menu_share"
+                app:tint="@color/brown_main" />
 
         </LinearLayout>
 
-        <!-- 4. 카페 추천 사유/특징 -->
+
+        <!-- =====================================================
+             4. 추천 사유
+             ===================================================== -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -179,9 +194,128 @@
                 android:text="특징 설명..."
                 android:textColor="@color/text_muted"
                 android:textSize="14sp" />
+
         </LinearLayout>
 
-        <!-- 5. 사용자 방문 리뷰 섹션 -->
+
+        <!-- =====================================================
+             5. 사용자 태그 평가
+             ===================================================== -->
+
+        <LinearLayout
+            android:id="@+id/layoutTagEvaluation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@color/surface_warm"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏷️ 이 카페의 특징을 알려주세요"
+                android:textColor="@color/brown_dark"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="직접 방문해서 느낀 특징을 선택해주세요.&#10;여러분의 평가가 CafeFit 추천 정확도를 높여줍니다."
+                android:textColor="@color/text_muted"
+                android:textSize="13sp" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupEvaluation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:selectionRequired="false"
+                app:singleSelection="false" />
+
+            <Button
+                android:id="@+id/btnSubmitTagEvaluation"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="@color/brown_dark"
+                android:text="태그 평가 저장"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btnDeleteTagEvaluation"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="6dp"
+                android:backgroundTint="@color/surface_warm"
+                android:text="평가 삭제"
+                android:textColor="@color/brown_main"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/txtEvaluationStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text=""
+                android:textColor="@color/text_muted"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+
+        <!-- =====================================================
+             6. 사용자 태그 교차검증 결과
+             ===================================================== -->
+
+        <LinearLayout
+            android:id="@+id/layoutTagVerification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@color/surface_warm"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📊 사용자 태그 검증"
+                android:textColor="@color/brown_dark"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtVerificationSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="사용자 평가 데이터를 불러오는 중입니다."
+                android:textColor="@color/text_muted"
+                android:textSize="13sp" />
+
+            <LinearLayout
+                android:id="@+id/layoutVerificationResults"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical" />
+
+        </LinearLayout>
+
+
+        <!-- =====================================================
+             7. 사용자 방문 리뷰
+             ===================================================== -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -212,6 +346,7 @@
                     android:backgroundTint="@color/brown_dark"
                     android:text="+ 리뷰 작성"
                     android:textSize="12sp" />
+
             </RelativeLayout>
 
             <TextView
@@ -220,7 +355,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:padding="24dp"
-                android:text="아직 작성된 리뷰가 없습니다.\n첫 번째 리뷰를 남겨보세요!"
+                android:text="아직 작성된 리뷰가 없습니다.&#10;첫 번째 리뷰를 남겨보세요!"
                 android:textColor="@color/text_muted"
                 android:textSize="13sp"
                 android:visibility="gone" />
