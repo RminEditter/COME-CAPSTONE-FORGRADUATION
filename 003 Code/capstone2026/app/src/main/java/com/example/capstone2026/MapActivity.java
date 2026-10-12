@@ -2,6 +2,14 @@ package com.example.capstone2026;
 
 import android.Manifest;
 import android.content.Intent;
+import android.app.AlertDialog;
+import android.graphics.Color;
+import android.graphics.PointF;
+import android.content.res.ColorStateList;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.RadioGroup;
+import android.widget.RadioButton;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -56,11 +64,12 @@ public class MapActivity extends AppCompatActivity {
 
     private Spinner spinnerDistrict;
     private Button btnMyLocation;
-    private ChipGroup chipGroupFilter;
+    private Button btnTagFilter;
+    private boolean matchAllTags = true;
 
     // 바텀시트 관련 UI
     private BottomSheetBehavior<View> bottomSheetBehavior;
-    private TextView tvCafeName, tvCafeAddress;
+    private TextView tvCafeName, tvCafeAddress, tvCafeReason;
     private ChipGroup chipGroupCafeTags;
     private Button btnOpenDetail;
     private CafeMapItem selectedCafeItem;
@@ -76,8 +85,6 @@ public class MapActivity extends AppCompatActivity {
 
     private final android.os.Handler markerHandler = new android.os.Handler(Looper.getMainLooper());
     private int markerGeneration;
-    private boolean updatingFilterChips;
-    private boolean allTagsSelected = true;
 
     private String selectedDistrict = "전체";
     private final List<Tag> selectedTagFilters = new ArrayList<>(); // 선택된 태그 필터
@@ -102,7 +109,7 @@ public class MapActivity extends AppCompatActivity {
 
         spinnerDistrict = findViewById(R.id.spinnerDistrict);
         btnMyLocation = findViewById(R.id.btnMyLocation);
-        chipGroupFilter = findViewById(R.id.chipGroupFilter);
+        btnTagFilter = findViewById(R.id.btnTagFilter);
         mapView = findViewById(R.id.mapView);
 
         mapView.onCreate(savedInstanceState);
@@ -124,6 +131,11 @@ public class MapActivity extends AppCompatActivity {
             mapLibreMap.setStyle("https://tiles.openfreemap.org/styles/liberty", style -> {
                 loadCafeData();
                 checkLocationPermission();
+            });
+
+            // 지도 이동/확대가 끝나면 현재 화면에 맞게 마커를 다시 계산합니다.
+            mapLibreMap.addOnCameraIdleListener(() -> {
+                if (!allCafeItems.isEmpty()) showFilteredCafeMarkers();
             });
 
             // 💡 [2번 기능] 마커 터치 시 바텀시트 오픈
@@ -149,6 +161,12 @@ public class MapActivity extends AppCompatActivity {
         });
 
         btnMyLocation.setOnClickListener(v -> moveToCurrentLocation());
+        findViewById(R.id.btnMapZoomIn).setOnClickListener(v -> {
+            if (mapLibreMap != null) mapLibreMap.animateCamera(CameraUpdateFactory.zoomIn());
+        });
+        findViewById(R.id.btnMapZoomOut).setOnClickListener(v -> {
+            if (mapLibreMap != null) mapLibreMap.animateCamera(CameraUpdateFactory.zoomOut());
+        });
     }
 
     private void initBottomSheet() {
@@ -159,6 +177,7 @@ public class MapActivity extends AppCompatActivity {
 
             tvCafeName = findViewById(R.id.tvCafeName);
             tvCafeAddress = findViewById(R.id.tvCafeAddress);
+            tvCafeReason = findViewById(R.id.tvCafeReason);
             chipGroupCafeTags = findViewById(R.id.chipGroupCafeTags);
             btnOpenDetail = findViewById(R.id.btnOpenDetail);
 
@@ -198,57 +217,177 @@ public class MapActivity extends AppCompatActivity {
             chipGroupCafeTags.addView(chip);
         }
 
+        String reason = buildMapRecommendationReason(cafe);
+        tvCafeReason.setText(reason);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
     }
 
-    // 💡 [1번 기능] 상단 태그 필터 칩 연동
-    private void setupTagFilter() {
-        if (chipGroupFilter == null) return;
-
-        int[] ids = {R.id.chipWork, R.id.chipOutlet, R.id.chipLaptop, R.id.chipDessert, R.id.chipNutty};
-        for (int i = 0; i < ids.length; i++) {
-            Chip chip = findViewById(ids[i]);
-            MapTagStyle style = MapTagStyle.values()[i];
-            chip.setText(style.symbol + " · " + style.label);
-            MapTagIcons.styleChip(chip, style);
+    private String buildMapRecommendationReason(CafeMapItem cafe) {
+        List<String> matched = new ArrayList<>();
+        List<String> features = new ArrayList<>();
+        if (cafe.rawTags != null) {
+            for (Tag tag : cafe.rawTags) {
+                if (tag == null) continue;
+                String label = tag.getKoreanLabel();
+                if (selectedTagFilters.contains(tag)) matched.add(label);
+                else features.add(label);
+            }
         }
+
+        StringBuilder reason = new StringBuilder();
+        if (!matched.isEmpty()) {
+            int limit = Math.min(2, matched.size());
+            reason.append("✓ 선택한 '")
+                    .append(android.text.TextUtils.join("', '", matched.subList(0, limit)))
+                    .append("' 조건과 일치해요.");
+            if (matched.size() > limit) reason.append(" (외 ").append(matched.size() - limit).append("개 조건)");
+        } else if (!selectedTagFilters.isEmpty()) {
+            reason.append("선택한 태그와 직접 일치하는 특징은 없어요.");
+        } else if (!features.isEmpty()) {
+            reason.append("이 카페는 '").append(features.get(0)).append("' 태그가 등록되어 있어요.");
+        } else {
+            reason.append("등록된 카페 특징이 아직 없어요.");
+        }
+
+        if (lastKnownLocation != null) {
+            float[] results = new float[1];
+            Location.distanceBetween(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude(),
+                    cafe.latitude, cafe.longitude, results);
+            if (!Float.isNaN(results[0]) && !Float.isInfinite(results[0])) {
+                int meters = Math.round(results[0]);
+                String distance = meters >= 1000
+                        ? String.format(java.util.Locale.KOREA, "%.1fkm", meters / 1000.0)
+                        : meters + "m";
+                reason.append("\n• 현재 위치에서 약 ").append(distance).append(" 거리에 있어요.");
+            }
+        }
+        return reason.toString();
+    }
+
+    // 상세 필터: 기존 태그 enum 18개를 분류해 표시한다.
+    private void setupTagFilter() {
+        btnTagFilter.setOnClickListener(v -> showTagFilterDialog());
         updateMarkerLegend();
-        chipGroupFilter.setOnCheckedStateChangeListener((group, checkedIds) -> {
-            if (updatingFilterChips) return;
-            updatingFilterChips = true;
-            boolean allChecked = checkedIds.contains(R.id.chipAll);
-            if (allChecked && !allTagsSelected) {
-                group.clearCheck();
-                group.check(R.id.chipAll);
-            } else if (allChecked && checkedIds.size() > 1) {
-                ((Chip) findViewById(R.id.chipAll)).setChecked(false);
-            } else if (checkedIds.isEmpty()) {
-                group.check(R.id.chipAll);
-            }
-            allTagsSelected = ((Chip) findViewById(R.id.chipAll)).isChecked();
-            updatingFilterChips = false;
-            selectedTagFilters.clear();
+    }
 
-            for (int id : group.getCheckedChipIds()) {
-                if (id == R.id.chipWork) selectedTagFilters.add(Tag.WORK_FRIENDLY);
-                else if (id == R.id.chipOutlet) selectedTagFilters.add(Tag.OUTLET_MANY);
-                else if (id == R.id.chipLaptop) selectedTagFilters.add(Tag.LAPTOP_OK);
-                else if (id == R.id.chipDessert) selectedTagFilters.add(Tag.DESSERT);
-                else if (id == R.id.chipNutty) selectedTagFilters.add(Tag.BEAN_NUTTY);
-            }
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
 
-            updateMarkerLegend();
-            // 전체 칩(chipAll)이 선택되었거나 다른 선택 칩이 없다면 전체 보기 처리
-            showFilteredCafeMarkers();
-        });
+    private void showTagFilterDialog() {
+        final Tag[][] groups = {
+                {Tag.BEAN_NUTTY, Tag.BEAN_ACIDIC},
+                {Tag.INTERIOR_PRETTY, Tag.DRINK_TASTY, Tag.HIP, Tag.WORK_FRIENDLY},
+                {Tag.DESSERT, Tag.SPECIALTY_DRIP, Tag.OUTLET_MANY, Tag.WIFI_FAST, Tag.LAPTOP_OK},
+                {Tag.SMALL_CAFE, Tag.LARGE_CAFE},
+                {Tag.SOLO, Tag.COUPLE, Tag.FRIEND, Tag.FAMILY, Tag.COLLEAGUE}
+        };
+        final String[] groupNames = {"원두 취향", "카페 분위기", "메뉴 및 편의시설", "카페 규모", "동반자"};
+        final List<Tag> pending = new ArrayList<>(selectedTagFilters);
+        final boolean[] pendingAnd = {matchAllTags};
+
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(20), dp(12), dp(20), dp(12));
+        scroll.addView(content);
+
+        TextView modeTitle = new TextView(this);
+        modeTitle.setText("여러 조건을 선택했을 때");
+        modeTitle.setTextColor(Color.rgb(60, 43, 33));
+        modeTitle.setTextSize(15);
+        content.addView(modeTitle);
+
+        RadioGroup modes = new RadioGroup(this);
+        modes.setOrientation(LinearLayout.VERTICAL);
+        RadioButton and = new RadioButton(this);
+        and.setText("AND · 모든 조건 만족");
+        RadioButton or = new RadioButton(this);
+        or.setText("OR · 하나 이상 만족");
+        modes.addView(and);
+        modes.addView(or);
+        (matchAllTags ? and : or).setChecked(true);
+        modes.setOnCheckedChangeListener((group, checkedId) -> pendingAnd[0] = and.isChecked());
+        content.addView(modes);
+
+        for (int i = 0; i < groups.length; i++) {
+            TextView title = new TextView(this);
+            title.setText(groupNames[i]);
+            title.setTextSize(16);
+            title.setTextColor(Color.rgb(80, 53, 36));
+            title.setPadding(0, dp(18), 0, dp(6));
+            content.addView(title);
+            ChipGroup chipGroup = new ChipGroup(this);
+            chipGroup.setSingleSelection(false);
+            chipGroup.setSingleLine(false);
+            for (Tag tag : groups[i]) {
+                Chip chip = new Chip(this);
+                chip.setText(tag.getKoreanLabel());
+                chip.setCheckable(true);
+                chip.setEnsureMinTouchTargetSize(true);
+                chip.setTextSize(13f);
+                chip.setChipCornerRadius(dp(18));
+                chip.setChipStrokeColor(ColorStateList.valueOf(Color.rgb(217, 210, 204)));
+                chip.setCheckedIconVisible(false);
+                chip.setChecked(pending.contains(tag));
+                styleFilterChip(chip, chip.isChecked());
+                chip.setOnCheckedChangeListener((button, checked) -> {
+                    if (checked && !pending.contains(tag)) pending.add(tag);
+                    if (!checked) pending.remove(tag);
+                    styleFilterChip(chip, checked);
+                });
+                chipGroup.addView(chip);
+            }
+            content.addView(chipGroup);
+        }
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("카페 상세 필터")
+                .setView(scroll)
+                .setNeutralButton("초기화", null)
+                .setNegativeButton("취소", (d, w) -> {})
+                .setPositiveButton("적용", (d, w) -> {
+                    selectedTagFilters.clear();
+                    selectedTagFilters.addAll(pending);
+                    matchAllTags = pendingAnd[0];
+                    updateMarkerLegend();
+                    showFilteredCafeMarkers();
+                }).create();
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+                .setOnClickListener(v -> {
+                    selectedTagFilters.clear();
+                    matchAllTags = true;
+                    updateMarkerLegend();
+                    showFilteredCafeMarkers();
+                    dialog.dismiss();
+                }));
+        dialog.show();
+    }
+
+    // 선택한 태그는 진한 테두리와 브라운 배경으로 확실하게 강조
+    private void styleFilterChip(Chip chip, boolean selected) {
+        int border = selected ? Color.rgb(135, 82, 54) : Color.rgb(217, 210, 204);
+        int background = selected ? Color.rgb(247, 228, 213) : Color.WHITE;
+        int foreground = selected ? Color.rgb(117, 67, 41) : Color.rgb(65, 57, 52);
+        chip.setChipBackgroundColor(ColorStateList.valueOf(background));
+        chip.setChipStrokeColor(ColorStateList.valueOf(border));
+        chip.setChipStrokeWidth(dp(selected ? 3 : 1));
+        chip.setTextColor(foreground);
+        chip.setTypeface(null, selected ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+        chip.setChipStartPadding(dp(10));
+        chip.setChipEndPadding(dp(10));
     }
 
     private void updateMarkerLegend() {
-        markerLegend.setText(selectedTagFilters.isEmpty()
-                ? "마커 색·글자 = 위 태그 색상 · 회색 카 = 기타\n여러 태그가 있으면 공 → 전 → 노 → 디 → 콩 순으로 대표 표시"
-                : selectedTagFilters.size() == 1
-                ? "선택한 태그의 색·글자로 표시합니다."
-                : "선택한 태그를 모두 만족하는 카페 · 작은 색상 점은 선택 태그");
+        if (markerLegend == null) return;
+        if (selectedTagFilters.isEmpty()) {
+            markerLegend.setText("전체 카페 표시 · 상세 필터에서 취향을 선택하세요");
+            btnTagFilter.setText("☰ 상세 필터");
+        } else {
+            markerLegend.setText((matchAllTags ? "모든 조건(AND)" : "하나 이상(OR)")
+                    + " · " + selectedTagFilters.size() + "개 태그 선택됨");
+            btnTagFilter.setText("☰ 필터 " + selectedTagFilters.size() + "개");
+        }
     }
 
     private void setupBackButton() {
@@ -342,8 +481,33 @@ public class MapActivity extends AppCompatActivity {
         if (bottomSheetBehavior != null) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         selectedCafeItem = null;
         final List<Tag> markerTags = new ArrayList<>(selectedTagFilters);
-        List<CafeMapItem> matches = MapCafeFilter.select(allCafeItems, selectedDistrict, selectedTagFilters);
-        // Spread native marker operations across frames; never truncate the matching cafes.
+        List<CafeMapItem> matches = MapCafeFilter.select(allCafeItems, selectedDistrict, selectedTagFilters, matchAllTags);
+        // 숫자 클러스터 대신 확대 수준에 맞춰 작은 화면 격자당 카페 1개만 표시합니다.
+        // 화면 밖 카페는 그리지 않으며, 확대할수록 더 많은 개별 마커가 나타납니다.
+        List<CafeMapItem> visible = new ArrayList<>();
+        int mapWidth = mapView.getWidth();
+        int mapHeight = mapView.getHeight();
+        if (mapWidth > 0 && mapHeight > 0) {
+            double zoom = mapLibreMap.getCameraPosition().zoom;
+            float density = getResources().getDisplayMetrics().density;
+            float spacing = (zoom < 12 ? 42f : zoom < 14 ? 32f : zoom < 16 ? 22f : 0f) * density;
+            java.util.HashSet<String> usedCells = new java.util.HashSet<>();
+            for (CafeMapItem cafe : matches) {
+                PointF p = mapLibreMap.getProjection().toScreenLocation(
+                        new LatLng(cafe.latitude, cafe.longitude));
+                if (p.x < 0 || p.y < 0 || p.x > mapWidth || p.y > mapHeight) continue;
+                if (spacing > 0) {
+                    String cell = ((int) Math.floor(p.x / spacing)) + ":" +
+                            ((int) Math.floor(p.y / spacing));
+                    if (!usedCells.add(cell)) continue;
+                }
+                visible.add(cafe);
+            }
+        } else {
+            visible.addAll(matches);
+        }
+        final List<CafeMapItem> markersToDraw = visible;
+        // Spread native marker operations across frames.
         markerHandler.post(new Runnable() {
             int index;
             boolean removedOldMarkers;
@@ -359,8 +523,8 @@ public class MapActivity extends AppCompatActivity {
                 }
                 if (cafeMarkers.isEmpty()) removedOldMarkers = true;
                 if (removedOldMarkers) {
-                    while (index < matches.size() && operations++ < 30) {
-                        CafeMapItem cafe = matches.get(index++);
+                    while (index < markersToDraw.size() && operations++ < 30) {
+                        CafeMapItem cafe = markersToDraw.get(index++);
                         Marker marker = mapLibreMap.addMarker(new MarkerOptions()
                                 .position(new LatLng(cafe.latitude, cafe.longitude)).title(cafe.name)
                                 .icon(tagIcons.icon(cafe.rawTags, markerTags)));
@@ -369,7 +533,7 @@ public class MapActivity extends AppCompatActivity {
                         if (android.os.SystemClock.uptimeMillis() >= deadline) break;
                     }
                 }
-                if (!removedOldMarkers || index < matches.size()) markerHandler.postDelayed(this, 16);
+                if (!removedOldMarkers || index < markersToDraw.size()) markerHandler.postDelayed(this, 16);
             }
         });
     }
@@ -469,7 +633,7 @@ public class MapActivity extends AppCompatActivity {
         intent.putExtra("cafe_name", cafe.name);
         intent.putExtra("cafe_address", cafe.address);
         intent.putExtra("cafe_tags", cafe.tags);
-        intent.putExtra("cafe_reason", "지도에서 선택한 카페입니다.");
+        intent.putExtra("cafe_reason", buildMapRecommendationReason(cafe));
         startActivity(intent);
     }
 

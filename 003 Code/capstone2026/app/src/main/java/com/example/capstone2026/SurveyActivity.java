@@ -6,11 +6,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CheckBox;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
+import android.widget.GridLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,7 +36,8 @@ public class SurveyActivity extends AppCompatActivity {
     private ViewPager2 viewPagerSurvey;
     private TextView txtProgress;
     private ProgressBar progressSurvey;
-    private Button btnPrev, btnNext, btnCloseSurvey;
+    private Button btnPrev, btnNext;
+    private TextView btnCloseSurvey;
 
     private ArrayList<Question> questions;
     private ArrayList<String> selectedTags = new ArrayList<>();
@@ -323,67 +327,90 @@ public class SurveyActivity extends AppCompatActivity {
 
             holder.layoutOptions.removeAllViews();
 
-            if (question.multiple) {
+            GridLayout grid = new GridLayout(SurveyActivity.this);
+            grid.setColumnCount(3);
+            grid.setUseDefaultMargins(false);
+            holder.layoutOptions.addView(grid);
+
+            // 폭이 좁은 휴대폰에서도 3열이 들어가도록 실제 컨테이너 폭을 기준으로 계산
+            holder.layoutOptions.post(() -> {
+                if (holder.getBindingAdapterPosition() == RecyclerView.NO_POSITION) return;
+                grid.removeAllViews();
+                int available = holder.layoutOptions.getWidth();
+                if (available <= 0) return;
+                int gap = dp(8);
+                int cardWidth = (available - gap * 2) / 3;
+
                 for (int i = 0; i < question.options.size(); i++) {
-                    int index = i;
+                    final int index = i;
+                    Option option = question.options.get(i);
+                    boolean selected = question.selectedIndexes.contains(i);
 
-                    CheckBox checkBox = new CheckBox(SurveyActivity.this);
-                    checkBox.setText(question.options.get(i).text);
-                    checkBox.setTextSize(18);
-                    checkBox.setPadding(12, 12, 12, 12);
-                    checkBox.setChecked(question.selectedIndexes.contains(index));
+                    LinearLayout card = new LinearLayout(SurveyActivity.this);
+                    card.setOrientation(LinearLayout.VERTICAL);
+                    card.setGravity(Gravity.CENTER);
+                    card.setPadding(dp(5), dp(10), dp(5), dp(10));
+                    card.setMinimumHeight(dp(102));
+                    card.setBackground(cardBackground(selected));
+                    card.setClickable(true);
+                    card.setFocusable(true);
+                    card.setContentDescription(option.text + (selected ? ", 선택됨" : ", 선택 안 됨"));
 
-                    checkBox.setOnClickListener(v -> {
-                        if (checkBox.isChecked()) {
-                            if (question.selectedIndexes.size() >= question.maxSelections) {
-                                checkBox.setChecked(false);
+                    TextView emoji = new TextView(SurveyActivity.this);
+                    emoji.setText(optionIcon(option.text));
+                    emoji.setTextSize(TypedValue.COMPLEX_UNIT_SP, 25);
+                    emoji.setGravity(Gravity.CENTER);
+                    card.addView(emoji);
 
-                                Toast.makeText(
-                                        SurveyActivity.this,
+                    TextView label = new TextView(SurveyActivity.this);
+                    label.setText(option.text);
+                    label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+                    label.setTypeface(null, selected ? Typeface.BOLD : Typeface.NORMAL);
+                    label.setTextColor(Color.parseColor(selected ? "#805339" : "#463A32"));
+                    label.setGravity(Gravity.CENTER);
+                    label.setMaxLines(3);
+                    LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                    labelParams.topMargin = dp(8);
+                    card.addView(label, labelParams);
+
+                    GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+                    params.width = cardWidth;
+                    params.height = dp(108);
+                    params.rightMargin = (i % 3 == 2) ? 0 : gap;
+                    params.bottomMargin = gap;
+                    grid.addView(card, params);
+
+                    card.setOnClickListener(v -> {
+                        if (question.multiple) {
+                            if (question.selectedIndexes.contains(index)) {
+                                question.selectedIndexes.remove(Integer.valueOf(index));
+                            } else if (question.selectedIndexes.size() >= question.maxSelections) {
+                                Toast.makeText(SurveyActivity.this,
                                         "최대 " + question.maxSelections + "개까지만 선택할 수 있어요.",
-                                        Toast.LENGTH_SHORT
-                                ).show();
-
+                                        Toast.LENGTH_SHORT).show();
                                 return;
-                            }
-
-                            if (!question.selectedIndexes.contains(index)) {
+                            } else {
                                 question.selectedIndexes.add(index);
                             }
                         } else {
-                            question.selectedIndexes.remove(Integer.valueOf(index));
+                            question.selectedIndexes.clear();
+                            question.selectedIndexes.add(index);
+                        }
+                        // 화면의 선택 상태를 즉시 다시 그림
+                        for (int j = 0; j < grid.getChildCount(); j++) {
+                            LinearLayout child = (LinearLayout) grid.getChildAt(j);
+                            boolean active = question.selectedIndexes.contains(j);
+                            child.setBackground(cardBackground(active));
+                            child.setContentDescription(question.options.get(j).text
+                                    + (active ? ", 선택됨" : ", 선택 안 됨"));
+                            TextView childLabel = (TextView) child.getChildAt(1);
+                            childLabel.setTextColor(Color.parseColor(active ? "#805339" : "#463A32"));
+                            childLabel.setTypeface(null, active ? Typeface.BOLD : Typeface.NORMAL);
                         }
                     });
-
-                    holder.layoutOptions.addView(checkBox);
                 }
-            } else {
-                RadioGroup radioGroup = new RadioGroup(SurveyActivity.this);
-                radioGroup.setOrientation(RadioGroup.VERTICAL);
-
-                for (int i = 0; i < question.options.size(); i++) {
-                    int index = i;
-
-                    RadioButton radioButton = new RadioButton(SurveyActivity.this);
-                    radioButton.setText(question.options.get(i).text);
-                    radioButton.setTextSize(18);
-                    radioButton.setPadding(12, 12, 12, 12);
-                    radioButton.setId(View.generateViewId());
-
-                    if (question.selectedIndexes.contains(index)) {
-                        radioButton.setChecked(true);
-                    }
-
-                    radioButton.setOnClickListener(v -> {
-                        question.selectedIndexes.clear();
-                        question.selectedIndexes.add(index);
-                    });
-
-                    radioGroup.addView(radioButton);
-                }
-
-                holder.layoutOptions.addView(radioGroup);
-            }
+            });
         }
 
         @Override
@@ -402,6 +429,47 @@ public class SurveyActivity extends AppCompatActivity {
                 layoutOptions = itemView.findViewById(R.id.layoutOptions);
             }
         }
+    }
+
+    private int dp(float value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private GradientDrawable cardBackground(boolean selected) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(Color.parseColor(selected ? "#F5E5D8" : "#FFFFFF"));
+        shape.setCornerRadius(dp(14));
+        shape.setStroke(dp(selected ? 2 : 1),
+                Color.parseColor(selected ? "#A16B4B" : "#E8DDD4"));
+        return shape;
+    }
+
+    private String optionIcon(String label) {
+        if (label.contains("조용") || label.contains("차분")) return "🌿";
+        if (label.contains("카공") || label.contains("노트북") || label.contains("작업")) return "💻";
+        if (label.contains("인테리어") || label.contains("사진")) return "✨";
+        if (label.contains("디저트")) return "🍰";
+        if (label.contains("힙")) return "🎧";
+        if (label.contains("대화") || label.contains("친구")) return "💬";
+        if (label.contains("혼자")) return "🧍";
+        if (label.contains("연인")) return "💕";
+        if (label.contains("가족")) return "👨‍👩‍👧";
+        if (label.contains("직장")) return "💼";
+        if (label.contains("고소")) return "🫘";
+        if (label.contains("산미")) return "🍋";
+        if (label.contains("둘 다")) return "☕";
+        if (label.contains("커피") || label.contains("원두")) return "☕";
+        if (label.contains("논커피") || label.contains("음료")) return "🥤";
+        if (label.contains("먹")) return "🧁";
+        if (label.contains("아담") || label.contains("개인카페")) return "🏠";
+        if (label.contains("대형") || label.contains("넓은")) return "🏢";
+        if (label.contains("규모")) return "🏡";
+        if (label.contains("콘센트")) return "🔌";
+        if (label.contains("와이파이")) return "📶";
+        if (label.contains("분위기")) return "🌸";
+        if (label.contains("접근") || label.contains("거리")) return "📍";
+        if (label.contains("관심 없음") || label.contains("중요하지")) return "➖";
+        return "☕";
     }
 
     private void saveSurveyToFirestore(ArrayList<String> tags, String priority) {

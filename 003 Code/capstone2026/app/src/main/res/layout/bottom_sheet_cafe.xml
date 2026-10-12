@@ -12,51 +12,44 @@
     app:behavior_peekHeight="0dp"
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
-    <!-- 상단 작은 드래그 바 -->
-    <View
-        android:layout_width="40dp"
-        android:layout_height="4dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="12dp"
+    <View android:layout_width="42dp" android:layout_height="4dp"
+        android:layout_gravity="center_horizontal" android:layout_marginBottom="16dp"
         android:background="@color/outline_warm" />
 
-    <!-- 카페 이름 -->
-    <TextView
-        android:id="@+id/tvCafeName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="카페 이름"
-        android:textColor="@color/text_dark"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="선택한 카페" android:textColor="@color/brown_main"
+        android:textSize="12sp" android:textStyle="bold" />
 
-    <!-- 카페 주소 및 거리 -->
-    <TextView
-        android:id="@+id/tvCafeAddress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="대전광역시 중구 ..."
-        android:textColor="@color/text_muted"
-        android:textSize="14sp" />
+    <TextView android:id="@+id/tvCafeName" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="4dp"
+        android:text="카페 이름" android:textColor="@color/text_dark"
+        android:textSize="22sp" android:textStyle="bold"
+        android:maxLines="2" android:ellipsize="end" />
 
-    <!-- 태그 목록 (ChipGroup) -->
+    <TextView android:id="@+id/tvCafeAddress" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="6dp"
+        android:text="카페 주소" android:textColor="@color/text_muted"
+        android:textSize="13sp" />
+
     <com.google.android.material.chip.ChipGroup
-        android:id="@+id/chipGroupCafeTags"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp" />
+        android:id="@+id/chipGroupCafeTags" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="12dp" />
 
-    <!-- 상세 보기 버튼 -->
-    <Button
-        android:id="@+id/btnOpenDetail"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:backgroundTint="@color/brown_main"
-        android:text="카페 상세 정보 보기"
-        android:textColor="@android:color/white"
-        android:textSize="15sp"
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" android:orientation="vertical"
+        android:padding="12dp" android:background="#F4E9DE">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="이 카페를 추천하는 이유" android:textColor="@color/brown_main"
+            android:textSize="13sp" android:textStyle="bold" />
+        <TextView android:id="@+id/tvCafeReason" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="6dp"
+            android:text="카페 특징을 확인해 보세요" android:textColor="@color/text_dark"
+            android:textSize="14sp" android:lineSpacingExtra="4dp" />
+    </LinearLayout>
+
+    <Button android:id="@+id/btnOpenDetail" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="16dp"
+        android:backgroundTint="@color/brown_main" android:text="카페 상세 정보 보기"
+        android:textColor="@android:color/white" android:textSize="15sp"
         android:textStyle="bold" />
-
 </LinearLayout>

@@ -1,45 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    card_view:cardCornerRadius="24dp"
-    card_view:cardElevation="6dp"
-    card_view:cardBackgroundColor="@color/surface_warm"
-    android:layout_margin="4dp">
+    android:fillViewport="true"
+    android:background="#FFFDF8"
+    android:clipToPadding="false"
+    android:scrollbars="none">
 
     <LinearLayout
         android:id="@+id/layoutOptionContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="24dp">
 
+        <!-- 질문 제목 -->
         <TextView
             android:id="@+id/txtQuestion"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="질문"
-            android:textSize="22sp"
+            android:text="어떤 분위기의 카페를 좋아하시나요?"
+            android:textColor="#30241C"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="@color/text_dark"
-            android:layout_marginBottom="20dp" />
+            android:includeFontPadding="false"
+            android:layout_marginBottom="10dp"/>
 
+        <!-- 질문 설명 -->
         <TextView
             android:id="@+id/txtSubQuestion"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textSize="14sp"
-            android:textColor="@color/text_muted"
-            android:layout_marginBottom="16dp" />
+            android:text="가장 마음에 드는 항목을 선택해주세요."
+            android:textColor="#927E70"
+            android:textSize="13sp"
+            android:lineSpacingExtra="3dp"
+            android:layout_marginBottom="24dp"/>
 
+        <!-- 선택 카드가 들어갈 영역 -->
         <LinearLayout
             android:id="@+id/layoutOptions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            android:orientation="vertical"/>
+
+        <!-- 하단 안내 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="선택한 취향을 바탕으로 카페를 추천해드려요."
+            android:textColor="#AD9A8C"
+            android:textSize="12sp"
+            android:gravity="center"/>
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</ScrollView>

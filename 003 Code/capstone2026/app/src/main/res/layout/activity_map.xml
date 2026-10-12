@@ -81,67 +81,18 @@
 
         </LinearLayout>
 
-        <!-- 3. 상단 태그 칩 필터 (가로 스크롤) -->
-        <HorizontalScrollView
+        <!-- 상세 필터: 버튼 하나로 상단 공간 확보 -->
+        <Button
+            android:id="@+id/btnTagFilter"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
-            android:paddingBottom="8dp"
-            android:scrollbars="none">
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupFilter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:singleLine="true"
-                app:singleSelection="false">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipAll"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="#전체" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipWork"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="#카공" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipOutlet"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="#콘센트많음" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipLaptop"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="#노트북가능" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipDessert"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="#디저트" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipNutty"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="#고소한원두" />
-
-            </com.google.android.material.chip.ChipGroup>
-        </HorizontalScrollView>
+            android:layout_height="48dp"
+            android:layout_marginStart="18dp"
+            android:layout_marginEnd="18dp"
+            android:layout_marginBottom="6dp"
+            android:text="상세 필터"
+            android:textAllCaps="false"
+            android:textColor="#503A30"
+            android:backgroundTint="#F2E4D7" />
 
         <TextView
             android:id="@+id/mapMarkerLegend"
@@ -162,6 +113,42 @@
             android:layout_height="match_parent"
             tools:ignore="MissingClass" />
 
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="12dp"
+        android:orientation="vertical"
+        android:background="#FFFFFF"
+        android:elevation="8dp">
+        <TextView
+            android:id="@+id/btnMapZoomIn"
+            android:layout_width="50dp"
+            android:layout_height="52dp"
+            android:gravity="center"
+            android:text="+"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#503A30"
+            android:background="#FFFFFF"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="지도 확대" />
+        <TextView
+            android:id="@+id/btnMapZoomOut"
+            android:layout_width="50dp"
+            android:layout_height="52dp"
+            android:gravity="center"
+            android:text="−"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#503A30"
+            android:background="#FFFFFF"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="지도 축소" />
     </LinearLayout>
 
     <!-- 5. 마커 클릭 시 올라올 하단 바텀시트 레이아웃 연결 -->
