@@ -64,6 +64,13 @@ public class RewardShopActivity extends AppCompatActivity {
         statusView = text("", 12, Color.DKGRAY, false);
         addWithTopMargin(wallet, statusView, 6);
 
+        TextView earning = text("포인트 적립 방법", 18, Color.rgb(29,45,36), true);
+        addWithTopMargin(root, earning, 20);
+        addWithTopMargin(root, text("카페 상세 → 방문 기록 남기기에서 어울리는 특징을 선택하고 저장하세요.\n관리자 확인 후 100P · 계정당 같은 카페는 최초 1회\n별점과 무관하며 수정·삭제·재등록으로 중복 적립되지 않습니다.", 14, Color.DKGRAY, false), 8);
+        Button history = new Button(this);
+        history.setText("포인트 적립 내역 보기");
+        history.setOnClickListener(v -> startActivity(new android.content.Intent(this, PointHistoryActivity.class)));
+        addWithTopMargin(root, history, 10);
         TextView section = text("교환 상품 (화면 예시)", 18, Color.rgb(29, 45, 36), true);
         addWithTopMargin(root, section, 26);
         addReward(root, "커피 교환권", 3000, "예시 상품 · 실제 발급 상품이 아닙니다.");
@@ -98,11 +105,12 @@ public class RewardShopActivity extends AppCompatActivity {
     private void refreshBalance() {
         balanceView.setText("조회 중...");
         statusView.setText("");
-        pointManager.getMyPoints(new PointManager.PointCallback() {
+        pointManager.observeMyPoints(this, new PointManager.PointCallback() {
             @Override
             public void onSuccess(long points) {
                 if (isFinishing() || isDestroyed()) return;
                 balanceView.setText(formatter.format(points) + " P");
+                statusView.setText("계정에 연결된 잔액 · 적립 처리 시 자동 갱신");
             }
 
             @Override

@@ -197,7 +197,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void loadPoints(int generation, String uid) {
         if (pointBalanceView == null) return;
         pointBalanceView.setText("포인트 조회 중...");
-        pointManager.getMyPoints(new PointManager.PointCallback() {
+        pointManager.observeMyPoints(this, new PointManager.PointCallback() {
             @Override public void onSuccess(long points) {
                 if (isCurrent(generation, uid)) {
                     pointBalanceView.setText(String.format(java.util.Locale.KOREA, "%,d P", points));

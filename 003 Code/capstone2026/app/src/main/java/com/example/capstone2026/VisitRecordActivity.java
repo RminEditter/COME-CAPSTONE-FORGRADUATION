@@ -92,7 +92,7 @@ public class VisitRecordActivity extends AppCompatActivity {
         btnSaveVisit.setEnabled(false);
         db.collection("visit_records").add(record)
                 .addOnSuccessListener(reference -> {
-                    showMessage("방문 기록이 서버에 저장되었습니다.");
+                    showMessage("방문 기록이 저장되었습니다. 태그 평가 포인트는 관리자 확인 후 반영됩니다.");
                     applyBadgesAfterVisit(uid, rating);
                 })
                 .addOnFailureListener(e -> {

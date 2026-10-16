@@ -30,6 +30,21 @@ public class PointManager {
         auth = FirebaseAuth.getInstance();
     }
 
+    /** Activity-bound listener is removed automatically when the screen stops. */
+    public void observeMyPoints(android.app.Activity activity, PointCallback callback) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) { callback.onFailure("로그인이 필요합니다."); return; }
+        String uid = user.getUid();
+        db.collection("users").document(uid).addSnapshotListener(activity, (snapshot, error) -> {
+            if (auth.getCurrentUser() == null || !uid.equals(auth.getCurrentUser().getUid())) return;
+            if (error != null) { callback.onFailure("포인트 조회에 실패했습니다. 다시 열어주세요."); return; }
+            Object raw = snapshot == null ? null : snapshot.get("pointBalance");
+            if (raw == null) callback.onSuccess(0);
+            else if (raw instanceof Number && ((Number) raw).longValue() >= 0) callback.onSuccess(((Number) raw).longValue());
+            else callback.onFailure("포인트 데이터 형식이 올바르지 않습니다.");
+        });
+    }
+
     /** Reads users/{uid}.pointBalance, matching the Cloud Function. */
     public void getMyPoints(PointCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
