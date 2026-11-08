@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CafeFit 관리자</title>
+  <style>
+    :root { font-family: system-ui, 'Malgun Gothic', sans-serif; color:#183a2a; background:#f4f7f4; }
+    body { margin:0; } main { max-width:1050px; margin:auto; padding:32px 20px; }
+    header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    h1 { font-size:26px; margin:0; } h2 { font-size:18px; margin:0 0 14px; }
+    .muted { color:#64766b; } .panel { background:white; border:1px solid #e2e9e3; border-radius:16px; padding:20px; margin-top:18px; }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:18px; }
+    .stat { background:white; border-radius:14px; padding:18px; border:1px solid #e2e9e3; }
+    .stat strong { font-size:26px; display:block; margin-top:8px; }
+    button { background:#236b47; color:white; border:0; border-radius:9px; padding:10px 14px; cursor:pointer; font-weight:600; }
+    button.secondary { background:#e7eee9; color:#24573b; } button.danger { background:#a44242; }
+    button:disabled { opacity:.5; cursor:not-allowed; } input,select { padding:10px; border-radius:8px; border:1px solid #bdccc1; max-width:100%; }
+    .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .table-wrap { overflow-x:auto; } table { width:100%; border-collapse:collapse; font-size:14px; } th,td { text-align:left; padding:12px 10px; border-bottom:1px solid #e7eee9; }
+    td.id { font-family:monospace; overflow-wrap:anywhere; max-width:230px; font-size:12px; } .actions { display:flex; gap:6px; flex-wrap:wrap; }
+    #notice { min-height:22px; font-weight:600; } .hidden { display:none; }
+    @media(max-width:650px) { .stats { grid-template-columns:1fr; } header { align-items:flex-start; flex-direction:column; } }
+  </style>
+</head>
+<body><main>
+  <header><div><h1>☕ CafeFit 관리자</h1><p class="muted">기프티콘 교환 신청 관리 · 로컬 PC 전용</p></div><button id="logout" class="secondary hidden">접속 해제</button></header>
+  <section id="login" class="panel"><h2>관리자 접속</h2><p class="muted">터미널에 표시된 접속 코드를 입력하세요. 코드는 서버를 다시 켤 때마다 변경됩니다.</p><div class="toolbar"><input id="token" type="password" autocomplete="off" placeholder="접속 코드"><button id="connect">접속</button></div></section>
+  <section id="dashboard" class="hidden">
+    <div class="stats"><div class="stat">승인 대기<strong id="pending">0</strong></div><div class="stat">지급 대기<strong id="approved">0</strong></div><div class="stat">지급 완료<strong id="completed">0</strong></div></div>
+    <div class="panel"><div class="toolbar" style="justify-content:space-between"><h2>교환 신청 목록</h2><div class="toolbar"><select id="filter"><option value="ALL">전체</option><option value="PENDING">승인 대기</option><option value="APPROVED">지급 대기</option><option value="COMPLETED">지급 완료</option><option value="REJECTED">거절</option></select><button id="refresh" class="secondary">새로고침</button></div></div><div class="table-wrap"><table><thead><tr><th>신청일</th><th>상품</th><th>포인트</th><th>상태</th><th>신청 ID</th><th>관리</th></tr></thead><tbody id="requests"></tbody></table></div></div>
+    <p class="muted">승인 시 포인트가 차감됩니다. 실제 기프티콘 발송을 확인한 뒤에만 '지급 완료'를 누르세요.</p>
+  </section>
+  <p id="notice" role="status"></p>
+</main><script src="/admin.js" defer></script></body></html>

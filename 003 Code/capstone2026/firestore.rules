@@ -1,54 +1,192 @@
-// Default database rules: point balances and ledgers are administrator-only.
+
 rules_version = '2';
+
 service cloud.firestore {
- match /databases/{database}/documents {
-  function signedIn() { return request.auth != null; }
-  function owner(uid) { return signedIn() && request.auth.uid == uid; }
-  match /users/{uid} {
-   allow read: if owner(uid);
-   allow create: if owner(uid) && !request.resource.data.keys().hasAny(['pointBalance']);
-   allow update: if owner(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pointBalance']);
-   allow delete: if false;
-   match /badges/{id} { allow read, write: if owner(uid); }
-   match /point_history/{id} { allow read: if owner(uid); allow write: if false; }
-   match /point_awards/{id} { allow read: if owner(uid); allow write: if false; }
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // 사용자 정보 및 포인트
+    match /users/{uid} {
+      allow read: if owner(uid);
+
+      allow create: if owner(uid)
+        && !request.resource.data.keys()
+          .hasAny(['pointBalance']);
+
+      allow update: if owner(uid)
+        && !request.resource.data.diff(resource.data)
+          .affectedKeys().hasAny(['pointBalance']);
+
+      allow delete: if false;
+
+      match /badges/{id} {
+        allow read, write: if owner(uid);
+      }
+
+      match /point_history/{id} {
+        allow read: if owner(uid);
+        allow write: if false;
+      }
+
+      match /point_awards/{id} {
+        allow read: if owner(uid);
+        allow write: if false;
+      }
+    }
+
+    // 기프티콘 교환 신청
+    match /reward_requests/{requestId} {
+
+      // 본인 신청 내역만 조회
+      allow read: if signedIn()
+        && resource.data.uid == request.auth.uid;
+
+      // 반복 교환 신청 허용
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'uid', 'rewardId', 'cost', 'status', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'uid', 'rewardId', 'cost', 'status', 'createdAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.rewardId is string
+        && request.resource.data.cost is int
+
+        // 교환 상품 및 가격 검증
+        && (
+          (request.resource.data.rewardId == 'coffee'
+            && request.resource.data.cost == 3000)
+          ||
+          (request.resource.data.rewardId == 'dessert'
+            && request.resource.data.cost == 5000)
+          ||
+          (request.resource.data.rewardId == 'cafe'
+            && request.resource.data.cost == 10000)
+        )
+
+        // 기존 방식 또는 새로운 고유 ID 방식 허용
+        && (
+          requestId == request.auth.uid + '_'
+            + request.resource.data.rewardId
+
+          ||
+
+          requestId.matches(
+            '^' + request.auth.uid + '_'
+            + request.resource.data.rewardId
+            + '_[0-9a-f]{32}$'
+          )
+        )
+
+        && request.resource.data.status == 'PENDING'
+        && request.resource.data.createdAt == request.time;
+
+      // 관리자 SDK에서만 변경 가능
+      allow update, delete: if false;
+    }
+
+    // 커뮤니티
+    match /community_posts/{id} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.userUid == request.auth.uid;
+
+      allow update: if signedIn()
+        && resource.data.userUid == request.auth.uid
+        && request.resource.data.userUid == resource.data.userUid;
+
+      allow delete: if signedIn()
+        && resource.data.userUid == request.auth.uid;
+
+      match /comments/{comment} {
+        allow read: if signedIn();
+
+        allow create: if signedIn()
+          && request.resource.data.userUid == request.auth.uid;
+
+        allow update: if signedIn()
+          && resource.data.userUid == request.auth.uid
+          && request.resource.data.userUid == resource.data.userUid;
+
+        allow delete: if signedIn()
+          && resource.data.userUid == request.auth.uid;
+      }
+    }
+
+    // 추천 피드백
+    match /recommendation_feedback/{id} {
+      allow read: if signedIn()
+        && resource.data.userUid == request.auth.uid;
+
+      allow create: if signedIn()
+        && request.resource.data.userUid == request.auth.uid;
+
+      allow update: if signedIn()
+        && resource.data.userUid == request.auth.uid
+        && request.resource.data.userUid == resource.data.userUid;
+
+      allow delete: if signedIn()
+        && resource.data.userUid == request.auth.uid;
+    }
+
+    // 태그 평가
+    match /tag_evaluations/{id} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && id == request.resource.data.cafeId
+          + '_' + request.auth.uid;
+
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && !request.resource.data.diff(resource.data)
+          .affectedKeys().hasAny(['userId', 'cafeId']);
+
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // 포인트 설정
+    match /point_config/{id} {
+      allow read, write: if false;
+    }
+
+    // 카페 데이터
+    match /cafes/{id} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // 방문 기록
+    match /visit_records/{id} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.userUid == request.auth.uid
+        && request.resource.data.cafeId is string
+        && exists(
+          /databases/$(database)/documents/cafes/$(request.resource.data.cafeId)
+        );
+
+      allow update: if signedIn()
+        && resource.data.userUid == request.auth.uid
+        && !request.resource.data.diff(resource.data)
+          .affectedKeys().hasAny([
+            'userUid', 'cafeId', 'visitedAt'
+          ]);
+
+      allow delete: if signedIn()
+        && resource.data.userUid == request.auth.uid;
+    }
   }
-  match /community_posts/{id} {
-   allow read: if signedIn();
-   allow create: if signedIn() && request.resource.data.userUid == request.auth.uid;
-   allow update: if signedIn() && resource.data.userUid == request.auth.uid && request.resource.data.userUid == resource.data.userUid;
-   allow delete: if signedIn() && resource.data.userUid == request.auth.uid;
-   match /comments/{comment} {
-    allow read: if signedIn();
-    allow create: if signedIn() && request.resource.data.userUid == request.auth.uid;
-    allow update: if signedIn() && resource.data.userUid == request.auth.uid && request.resource.data.userUid == resource.data.userUid;
-    allow delete: if signedIn() && resource.data.userUid == request.auth.uid;
-   }
-  }
-  match /recommendation_feedback/{id} {
-   allow read: if signedIn() && resource.data.userUid == request.auth.uid;
-   allow create: if signedIn() && request.resource.data.userUid == request.auth.uid;
-   allow update: if signedIn() && resource.data.userUid == request.auth.uid && request.resource.data.userUid == resource.data.userUid;
-   allow delete: if signedIn() && resource.data.userUid == request.auth.uid;
-  }
-  match /tag_evaluations/{id} {
-   allow read: if signedIn();
-   allow create: if signedIn() && request.resource.data.userId == request.auth.uid
-     && id == request.resource.data.cafeId + '_' + request.auth.uid;
-   allow update: if signedIn() && resource.data.userId == request.auth.uid
-     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId','cafeId']);
-   allow delete: if signedIn() && resource.data.userId == request.auth.uid;
-  }
-  match /point_config/{id} { allow read, write: if false; }
-  match /cafes/{id} { allow read: if signedIn(); allow write: if false; }
-  match /visit_records/{id} {
-   allow read: if signedIn();
-   allow create: if signedIn() && request.resource.data.userUid == request.auth.uid
-     && request.resource.data.cafeId is string
-     && exists(/databases/$(database)/documents/cafes/$(request.resource.data.cafeId));
-   allow update: if signedIn() && resource.data.userUid == request.auth.uid
-     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userUid','cafeId','visitedAt']);
-   allow delete: if signedIn() && resource.data.userUid == request.auth.uid;
-  }
- }
 }
